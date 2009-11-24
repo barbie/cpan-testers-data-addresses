@@ -46,7 +46,7 @@ my %phrasebook = (
     'DeleteBackup'  => 'DELETE FROM addresses',
     'CreateBackup'  => 'CREATE TABLE addresses (testerid int, name text, pause text, PRIMARY KEY (testerid))',
     'SelectBackup'  => 'SELECT * FROM tester_profile',
-    'InsertBackup'  => 'INSERT INTO addresses',
+    'InsertBackup'  => 'INSERT INTO addresses (testerid,name,pause) VALUES (?,?,?)',
 );
 
 my %defaults = (
@@ -200,7 +200,7 @@ sub backup {
     my $rows = $self->{CPANSTATS}->iterator('array',$phrasebook{'SelectBackup'});
     while(my $row = $rows->()) {
         for my $driver (keys %{$self->{backups}}) {
-            $backups{$driver}{db}->do_query($phrasebook{'InsertBackup'},@$row);
+            $self->{backups}{$driver}{db}->do_query($phrasebook{'InsertBackup'},@$row);
         }
     }
 
@@ -549,23 +549,23 @@ sub _init_options {
     if($self->{options}{backup}) {
         $self->help(1,"No configuration for BACKUPS with backup option")    unless($cfg->SectionExists('BACKUPS'));
 
-        $self->mbackup(1);
         my @drivers = $cfg->val('BACKUPS','drivers');
         for my $driver (@drivers) {
             $self->help(1,"No configuration for backup option '$driver'")   unless($cfg->SectionExists($driver));
 
-            my %opt = map {$_ => $cfg->val($driver,$_);} qw(driver database dbfile dbhost dbport dbuser dbpass);
-            $self->{backups}{$driver}{'exists'} = $driver =~ /SQLite/i ? -f $opt{database} : 1;
+            %opts = ();
+            $opts{$_} = $cfg->val($driver,$_)   for(qw(driver database dbfile dbhost dbport dbuser dbpass));
+            $self->{backups}{$driver}{'exists'} = $driver =~ /SQLite/i ? -f $opts{database} : 1;
 
             # CSV is a bit of an oddity!
             if($driver =~ /CSV/i) {
                 $self->{backups}{$driver}{'exists'} = 0;
-                $self->{backups}{$driver}{'dbfile'} = $opt{dbfile};
-                $opt{dbfile} = 'uploads';
-                unlink($opt{dbfile});
+                $self->{backups}{$driver}{'dbfile'} = $opts{dbfile};
+                $opts{dbfile} = 'uploads';
+                unlink($opts{dbfile});
             }
 
-            $self->{backups}{$driver}{db} = CPAN::Testers::Common::DBUtils->new(%opt);
+            $self->{backups}{$driver}{db} = CPAN::Testers::Common::DBUtils->new(%opts);
             $self->help(1,"Cannot configure BACKUPS database for '$driver'")   unless($self->{backups}{$driver}{db});
         }
     }
