@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                     CPAN-Testers-Data-Addresses
-version:                  0.01
+version:                  0.02
 abstract:                 CPAN Testers Addresses Database Manager
 author:
   - Barbie <barbie@cpan.org>
@@ -17,6 +17,7 @@ requires:
   DBD::SQLite:                      0
   File::Basename:                   0
   File::Path:                       0
+  File::Slurp:                      0
   Getopt::Long:                     0
   IO::File:                         0
 recommends:
@@ -30,7 +31,7 @@ build_requires:
 provides:
   CPAN::Testers::Data::Addresses:
     file:     lib/CPAN/Testers/Data/Addresses.pm
-    version:  0.01
+    version:  0.02
 
 no_index:
   directory:
