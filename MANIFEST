@@ -2,6 +2,7 @@ CHANGES
 bin/addresses.pl
 examples/getmailrc.pl
 examples/create-address.sql
+examples/settings.ini
 lib/CPAN/Testers/Data/Addresses.pm
 Makefile.PL
 MANIFEST

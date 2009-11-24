@@ -1,6 +1,10 @@
 Revision history for Perl distribution CPAN-Testers-Data-Addresses
 ==================================================================
 
+0.03	current
+	- added example settings file
+	- added backup code
+
 0.02	24/11/2009
 	- added counters to update
 	- removed debugging statements

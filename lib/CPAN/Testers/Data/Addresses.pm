@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = '0.02';
+$VERSION = '0.03';
 $|++;
 
 #----------------------------------------------------------------------------
@@ -41,6 +41,12 @@ my %phrasebook = (
     'AllReports'            => q{SELECT id,tester FROM cpanstats WHERE state IN ('pass','fail','na','unknown') AND id > ? ORDER BY id},
     'GetTestersByMonth'     => q{SELECT DISTINCT tester FROM cpanstats WHERE postdate >= '%s' AND state IN ('pass','fail','na','unknown')},
     'GetTesters'            => q{SELECT DISTINCT tester FROM cpanstats WHERE state IN ('pass','fail','na','unknown')},
+
+    # Database backup requests
+    'DeleteBackup'  => 'DELETE FROM addresses',
+    'CreateBackup'  => 'CREATE TABLE addresses (testerid int, name text, pause text, PRIMARY KEY (testerid))',
+    'SelectBackup'  => 'SELECT * FROM tester_profile',
+    'InsertBackup'  => 'INSERT INTO addresses',
 );
 
 my %defaults = (
@@ -180,35 +186,34 @@ sub reindex {
 
 sub backup {
     my $self = shift;
-    my $db = $self->uploads;
 
-    for my $driver (keys %backups) {
-        if($backups{$driver}{'exists'}) {
-            $backups{$driver}{db}->do_query($phrasebook{'DeleteAll'});
+    for my $driver (keys %{$self->{backups}}) {
+        if($self->{backups}{$driver}{'exists'}) {
+            $self->{backups}{$driver}{db}->do_query($phrasebook{'DeleteBackup'});
         } elsif($driver =~ /(CSV|SQLite)/i) {
-            $backups{$driver}{db}->do_query($phrasebook{'CreateTable'});
+            $self->{backups}{$driver}{db}->do_query($phrasebook{'CreateBackup'});
         }
     }
 
     $self->_log("Backup via DBD drivers");
 
-    my $rows = $db->iterator('array',$phrasebook{'SelectAll'});
+    my $rows = $self->{CPANSTATS}->iterator('array',$phrasebook{'SelectBackup'});
     while(my $row = $rows->()) {
-        for my $driver (keys %backups) {
-            $backups{$driver}{db}->do_query($phrasebook{'InsertDistVersion'},@$row);
+        for my $driver (keys %{$self->{backups}}) {
+            $backups{$driver}{db}->do_query($phrasebook{'InsertBackup'},@$row);
         }
     }
 
     # handle the CSV exception
-    if($backups{CSV}) {
+    if($self->{backups}{CSV}) {
         $self->_log("Backup to CSV file");
-        $backups{CSV}{db} = undef;  # close db handle
-        my $fh1 = IO::File->new('uploads','r') or die "Cannot read temporary database file 'uploads'\n";
-        my $fh2 = IO::File->new($backups{CSV}{dbfile},'w+') or die "Cannot write to CSV database file $backups{CSV}{dbfile}\n";
+        $self->{backups}{CSV}{db} = undef;  # close db handle
+        my $fh1 = IO::File->new('addresses','r') or die "Cannot read temporary database file 'addresses'\n";
+        my $fh2 = IO::File->new($self->{backups}{CSV}{dbfile},'w+') or die "Cannot write to CSV database file $self->{backups}{CSV}{dbfile}\n";
         while(<$fh1>) { print $fh2 $_ }
         $fh1->close;
         $fh2->close;
-        unlink('uploads');
+        unlink('addresses');
     }
 }
 
@@ -538,6 +543,31 @@ sub _init_options {
     for my $opt (qw(update mailrc)) {
         next                                                                                            unless(   $self->{options}{$opt});
         $self->_help(1,"Given $opt file [$self->{options}{$opt}] not a valid file, see help below.")    unless(-f $self->{options}{$opt});
+    }
+
+    # configure backup DBs
+    if($self->{options}{backup}) {
+        $self->help(1,"No configuration for BACKUPS with backup option")    unless($cfg->SectionExists('BACKUPS'));
+
+        $self->mbackup(1);
+        my @drivers = $cfg->val('BACKUPS','drivers');
+        for my $driver (@drivers) {
+            $self->help(1,"No configuration for backup option '$driver'")   unless($cfg->SectionExists($driver));
+
+            my %opt = map {$_ => $cfg->val($driver,$_);} qw(driver database dbfile dbhost dbport dbuser dbpass);
+            $self->{backups}{$driver}{'exists'} = $driver =~ /SQLite/i ? -f $opt{database} : 1;
+
+            # CSV is a bit of an oddity!
+            if($driver =~ /CSV/i) {
+                $self->{backups}{$driver}{'exists'} = 0;
+                $self->{backups}{$driver}{'dbfile'} = $opt{dbfile};
+                $opt{dbfile} = 'uploads';
+                unlink($opt{dbfile});
+            }
+
+            $self->{backups}{$driver}{db} = CPAN::Testers::Common::DBUtils->new(%opt);
+            $self->help(1,"Cannot configure BACKUPS database for '$driver'")   unless($self->{backups}{$driver}{db});
+        }
     }
 
     # clean up potential rogue characters
