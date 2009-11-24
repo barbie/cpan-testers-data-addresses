@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 44;
+use Test::More tests => 59;
 use CPAN::Testers::Data::Addresses;
 
 
@@ -22,9 +22,24 @@ for(@addresses) {
 }
 
 
-### Last ID Tests
+### Prepare object
 
 ok( my $obj = CPAN::Testers::Data::Addresses->new(config => 't/test-config.ini'), "got object" );
+$obj->{filters} = [
+    'us.ibm.com',
+    'shaw.ca',
+    'ath.cx',
+    '(rambler|mail)\.de',
+    '(nasa|nih)\.gov',
+    '(net|org|com)\.(br|au|tw)',
+    '(co|org)\.uk',
+    '\w+\.edu',
+    '(ac|edu)\.(uk|jp|at|tw)',
+    'cpan\.org'
+];
+
+
+### Last ID Tests
 
 my $f = 't/_DBDIR/lastid.txt';
 unlink($f)  if(-f $f);
@@ -246,3 +261,28 @@ for my $key (keys %{ $obj->{unparsed_map} }) {
 }
 
 
+# ensure domains can be rejected
+
+my @domains = (
+    'us.ibm.com',
+    'shaw.ca',
+    'ath.cx',
+    'rambler.de',
+    'mail.de',
+    'nasa.gov',
+    'nih.gov',
+    'net.br',
+    'org.au',
+    'com.tw',
+    'co.uk',
+    'org.uk',
+    'example.edu',
+    'ac.uk',
+    'edu.at'
+);
+
+for my $domain (@domains) {
+    my $local = 'example';
+    my $email = $local .'@'. $domain;
+    is( $obj->map_domain($email,$local,$domain,$email), 0, "Domain checks filter out $domain");
+}

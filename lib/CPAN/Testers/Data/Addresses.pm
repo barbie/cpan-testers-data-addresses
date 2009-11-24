@@ -416,32 +416,9 @@ sub map_domain {
     my $self = shift;
     my ($key,$local,$domain,$email) = @_;
 
-#$self->_log("map_domain: 1.key= $key, local=$local, domain=$domain, email=$email");
-
-    return 0    if( $domain eq 'us.ibm.com'     ||
-                    $domain eq 'shaw.ca'        ||
-                    $domain eq 'ath.cx'         ||
-
-                    $domain =~ /^(rambler|mail)\.de$/   ||
-                    $domain =~ /^(web|gmx)\.de$/        ||
-                    $domain =~ /^(aacom|free)\.fr$/     ||
-                    $domain =~ /^(xs4all|demon)\.nl$/   ||
-
-                    $domain =~ /^(nasa|nih)\.gov$/                                  ||
-                    $domain =~ /^(ieee|no-ip|dyndns|cpan|perl|freebsd)\.org$/       ||
-                    $domain =~ /^(verizon|gmx|comcast|earthlink|cox|usa)\.net$/     ||
-                    $domain =~ /^(yahoo|google|gmail|mac|pair|rr|sun|aol)\.com$/    ||
-                    $domain =~ /^(pobox|hotmail|ibm|onlinehome-server)\.com$/       ||
-
-                    $domain =~ /^(net|org|com)\.(br|au|tw)$/        ||
-                    $domain =~ /^(co|org)\.uk$/                     ||
-                    $domain =~ /\b(edu|(ac|edu)\.(uk|jp|at|tw))$/             # education establishments
-                );
-
-#print STDERR "domain=[$domain]\n"   if($domain =~ /istic.org/);
-
-#use Data::Dumper;
-#$self->_log("map_domain: 2.domain_map=".Dumper($self->{domain_map}{$domain}));
+    for my $filter (@{$self->{filters}}) {
+        return 0    if($domain =~ /^$filter$/);
+    }
 
     if($self->{domain_map}{$domain}) {
         $self->{unparsed_map}{$key}->{$_} = $self->{domain_map}{$domain}->{$_}  for(qw(testerid addressid name pause match));
@@ -545,6 +522,11 @@ sub _init_options {
     for my $opt (@options) {
         $self->{options}{$opt} ||= $cfg->val('MASTER',$opt) || $defaults{$opt};
     }
+
+    # extract filters
+    my $filters = $cfg->val('DOMAINS','filters');
+    my @filters = split("\n", $filters) if($filters);
+    $self->{filters} = \@filters        if(@filters);
 
     # mandatory options
     #for my $opt (qw()) {

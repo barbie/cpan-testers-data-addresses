@@ -1,10 +1,12 @@
 Revision history for Perl distribution CPAN-Testers-Data-Addresses
 ==================================================================
 
-0.02	current
+0.02	24/11/2009
 	- added counters to update
 	- removed debugging statements
 	- added further address matching comparisons
+	- added missing prerequisite
+	- abstracted filters out into config file.
 
 0.01	22/11/2009
 	- initial release
