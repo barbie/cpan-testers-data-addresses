@@ -21,3 +21,4 @@ CREATE TABLE tester_profile (
     pause	varchar(255) default NULL,
   PRIMARY KEY  (testerid)
 ) ENGINE=MyISAM;
+

@@ -101,6 +101,7 @@ sub search {
 
 sub update {
     my $self = shift;
+    my ($new,$all) = (0,0);
     $self->_log("starting update");
 
     my $fh = IO::File->new($self->{options}{update})    or die "Cannot open mailrc file [$self->{options}{update}]: $!";
@@ -112,6 +113,7 @@ sub update {
             next;
         }
 
+        $all++;
         if($testerid == 0) {
             my @rows;
             @rows = $self->{CPANSTATS}->get_query('hash',$phrasebook{'GetTesterByPause'},$pause)    if($pause);
@@ -123,6 +125,7 @@ sub update {
                 $testerid = $rows[0]->{testerid};
             } else {
                 $testerid = $self->{CPANSTATS}->id_query($phrasebook{'InsertTester'},$name,$pause);
+                $new++;
             }
         }
 
@@ -139,33 +142,33 @@ sub update {
         $self->_log("... profile => address: ($testerid,$name,$pause) => ($addressid,$address)");
     }
 
+    print "$all addresses mapped\n";
+    print "$new new addresses\n";
+
+    $self->_log("$all addresses mapped, $new new addresses");
     $self->_log("stopping update");
 }
 
 sub reindex {
     my $self = shift;
 
-    print STDERR "reindex: 1\n";
     # load known addresses
     my %address;
     my $next = $self->{CPANSTATS}->iterator('hash',$phrasebook{'AllAddresses'});
-    print STDERR "reindex: 2\n";
     while( my $row = $next->() ) {
         $address{$row->{address}} = $row->{addressid};
     }
 
-    print STDERR "reindex: 3\n";
     # search through reports updating the index
     my $lastid = $self->{options}{lastid} || $self->_lastid();
     $next = $self->{CPANSTATS}->iterator('hash',$phrasebook{'AllReports'},$lastid);
-    print STDERR "reindex: 4\n";
     while( my $row = $next->() ) {
-        print STDERR "row: $row->{id} $row->{tester}\n";
+        #print STDERR "row: $row->{id} $row->{tester}\n";
         if($address{$row->{tester}}) {
-        print STDERR ".. FOUND\n";
+        #print STDERR ".. FOUND\n";
             $self->{CPANSTATS}->do_query($phrasebook{'UpdateAddressIndex'},$row->{id},$address{$row->{tester}});
         } else {
-        print STDERR "..NEW\n";
+        #print STDERR "..NEW\n";
             $address{$row->{tester}} = $self->{CPANSTATS}->id_query($phrasebook{'InsertAddress'},$row->{tester},_extract_email($row->{tester}));
             $self->{CPANSTATS}->do_query($phrasebook{'UpdateAddressIndex'},$row->{id},$address{$row->{tester}});
         }
@@ -340,8 +343,8 @@ sub print_addresses {
     for my $key (sort {$self->{unparsed_map}{$a} cmp $self->{unparsed_map}{$b}} keys %{ $self->{unparsed_map} }) {
         if($self->{unparsed_map}{$key}->{match}) {
             printf "%d,%d,%s,%s,%s,%s\n", 
-                $self->{unparsed_map}{$key}->{addressid},
-                $self->{unparsed_map}{$key}->{testerid},
+                ($self->{unparsed_map}{$key}->{addressid} || 0),
+                ($self->{unparsed_map}{$key}->{testerid}  || 0),
                 $key,
                 ($self->{unparsed_map}{$key}->{name}  || ''),
                 ($self->{unparsed_map}{$key}->{pause} || ''),
@@ -349,11 +352,13 @@ sub print_addresses {
             delete $self->{unparsed_map}{$key};
         } else {
             my ($local,$domain) = $self->{unparsed_map}{$key}->{email} =~ /([-+=\w.]+)\@([^\s]+)/;
+            ($local,$domain) = $key =~ /([-+=\w.]+)\@([^\s]+)/  unless($local && $domain);
             if($domain) {
                 my @parts = split(/\./,$domain);
                 $self->{unparsed_map}{$key}{'sort'} = join(".",reverse @parts) . '@' . $local;
             } else {
                 print STDERR "FAIL: $key\n";
+                $self->{unparsed_map}{$key}{'sort'} = '';
             }
         }
     }
@@ -369,8 +374,8 @@ sub print_addresses {
     for my $key (sort { $self->{unparsed_map}{$a}{'sort'} cmp $self->{unparsed_map}{$b}{'sort'} } keys %{ $self->{unparsed_map} }) {
         next    unless($key);
         printf "%d,%d,%s,%s,%s,%s\n", 
-                $self->{unparsed_map}{$key}->{addressid},
-                $self->{unparsed_map}{$key}->{testerid},
+                ($self->{unparsed_map}{$key}->{addressid} || 0),
+                ($self->{unparsed_map}{$key}->{testerid}  || 0),
                 $key,
                 ($self->{unparsed_map}{$key}->{name}  || ''),
                 ($self->{unparsed_map}{$key}->{pause} || ''),
@@ -411,7 +416,7 @@ sub map_domain {
     my $self = shift;
     my ($key,$local,$domain,$email) = @_;
 
-$self->_log("1.key= $key, local=$local, domain=$domain, email=$email");
+#$self->_log("map_domain: 1.key= $key, local=$local, domain=$domain, email=$email");
 
     return 0    if( $domain eq 'us.ibm.com'     ||
                     $domain eq 'shaw.ca'        ||
@@ -435,8 +440,8 @@ $self->_log("1.key= $key, local=$local, domain=$domain, email=$email");
 
 #print STDERR "domain=[$domain]\n"   if($domain =~ /istic.org/);
 
-use Data::Dumper;
-$self->_log("2.domain_map=".Dumper($self->{domain_map}{$domain}));
+#use Data::Dumper;
+#$self->_log("map_domain: 2.domain_map=".Dumper($self->{domain_map}{$domain}));
 
     if($self->{domain_map}{$domain}) {
         $self->{unparsed_map}{$key}->{$_} = $self->{domain_map}{$domain}->{$_}  for(qw(testerid addressid name pause match));
@@ -445,7 +450,7 @@ $self->_log("2.domain_map=".Dumper($self->{domain_map}{$domain}));
     }
     for my $map (keys %{ $self->{domain_map} }) {
         if($map =~ /\b$domain$/) {
-            $self->{unparsed_map}{$key}->{$_} = $self->{domain_map}{$domain}->{$_}  for(qw(testerid addressid name pause match));
+            $self->{unparsed_map}{$key}->{$_} = $self->{domain_map}{$map}->{$_}  for(qw(testerid addressid name pause match));
             $self->{unparsed_map}{$key}->{match} .= " - $domain - $map";
             return 1;
         }
