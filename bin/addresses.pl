@@ -69,7 +69,9 @@ L<CPAN::Testers::Data::Generator>,
 L<CPAN::Testers::WWW::Statistics>
 
 F<http://www.cpantesters.org/>,
-F<http://stats.cpantesters.org/>
+F<http://stats.cpantesters.org/>,
+F<http://wiki.cpantesters.org/>,
+F<http://blog.cpantesters.org/>
 
 =head1 AUTHOR
 

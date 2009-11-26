@@ -852,13 +852,13 @@ http://rt.cpan.org/Public/Dist/Display.html?Name=CPAN-Testers-Data-Addresses
 
 =head1 SEE ALSO
 
-L<CPAN::Testers::Common::Article>,
-L<CPAN::Testers::Common::DBUtils>,
-L<CPAN::Testers::Data::Generate>
+L<CPAN::Testers::Data::Generator>,
+L<CPAN::Testers::WWW::Statistics>
 
 F<http://www.cpantesters.org/>,
 F<http://stats.cpantesters.org/>,
-F<http://wiki.cpantesters.org/>
+F<http://wiki.cpantesters.org/>,
+F<http://blog.cpantesters.org/>
 
 =head1 AUTHOR
 
