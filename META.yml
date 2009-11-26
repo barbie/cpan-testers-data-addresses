@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                     CPAN-Testers-Data-Addresses
-version:                  0.03
+version:                  0.04
 abstract:                 CPAN Testers Addresses Data Manager
 author:
   - Barbie <barbie@cpan.org>
@@ -31,7 +31,7 @@ build_requires:
 provides:
   CPAN::Testers::Data::Addresses:
     file:     lib/CPAN/Testers/Data/Addresses.pm
-    version:  0.03
+    version:  0.04
 
 no_index:
   directory:
