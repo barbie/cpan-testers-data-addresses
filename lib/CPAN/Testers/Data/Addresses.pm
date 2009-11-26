@@ -1,5 +1,6 @@
 package CPAN::Testers::Data::Addresses;
 
+use 5.006;
 use strict;
 use warnings;
 
