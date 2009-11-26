@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 use strict;
 
-my $VERSION = '0.01';
+my $VERSION = '0.03';
 
 #----------------------------------------------------------------------------
 
@@ -11,19 +11,24 @@ addresses.pl - helper script to map tester addresses to real people.
 
 =head1 SYNOPSIS
 
-  perl addresses.pl --config|c=<file> \
-        [--address|a=<file>]  \
-        [--mailrc|m=<file>]   \
-        [--month=<string>] [--match] [--sort]
+  perl addresses.pl \
+        [--verbose|v] --config|c=<file> \
+        ( [--help|h] \
+        | [--update] \
+        | [--reindex] [--lastid=<num>] \
+        | [--backup] \
+        | [--mailrc|m=<file>] [--month=<string>] [--match] ) \
+        [--logfile=<file>] [--logclean=(0|1)]
 
 =head1 DESCRIPTION
 
-Using the cpanstats database, the latest 01mailrc.txt file and the addresses
-file, the script tries to match unmatched tester addresses to either a cpan
-author or an already known tester.
+Using the cpanstats database, this program can be used to update, reindex,
+backup and search the tester address tables. 
 
-For the remaining addresses, an attempt at pattern matching is made to try and
-identify similar addresses in the hope they can be manually identified.
+When searching, the program tries to match unmatched tester addresses to either
+a cpan author or an already known tester. For the remaining addresses, an 
+attempt at pattern matching is made to try and identify similar addresses in 
+the hope they can be manually identified.
 
 =cut
 
@@ -60,8 +65,8 @@ http://rt.cpan.org/Public/Dist/Display.html?Name=CPAN-Testers-Data-Addresses
 
 =head1 SEE ALSO
 
-L<CPAN::WWW::Testers::Generator>,
-L<CPAN::WWW::Testers>
+L<CPAN::Testers::Data::Generator>,
+L<CPAN::Testers::WWW::Statistics>
 
 F<http://www.cpantesters.org/>,
 F<http://stats.cpantesters.org/>
@@ -79,4 +84,3 @@ F<http://stats.cpantesters.org/>
   modify it under the same terms as Perl itself.
 
 =cut
-
