@@ -1,21 +1,26 @@
 Revision history for Perl distribution CPAN-Testers-Data-Addresses
 ==================================================================
 
+0.05	11/08/2010
+        - added META.json to the package files.
+        - removed references to NNTPID.
+        - added more domain filters to example settings.ini.
+
 0.04	26/11/2009
-	- added text for README
-	- updated documentation for wrapper script
-	- added and amended various links
+        - added text for README
+        - updated documentation for wrapper script
+        - added and amended various links
 
 0.03	24/11/2009
-	- added example settings file
-	- added backup code
+        - added example settings file
+        - added backup code
 
 0.02	24/11/2009
-	- added counters to update
-	- removed debugging statements
-	- added further address matching comparisons
-	- added missing prerequisite
-	- abstracted filters out into config file.
+        - added counters to update
+        - removed debugging statements
+        - added further address matching comparisons
+        - added missing prerequisite
+        - abstracted filters out into config file.
 
 0.01	22/11/2009
-	- initial release
+        - initial release
