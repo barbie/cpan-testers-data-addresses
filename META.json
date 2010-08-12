@@ -13,9 +13,9 @@
     },
     "generated_by": "Hand 1.0",
     "keywords" : [
-        "isbn",
-        "books",
-        "scraper"
+        "cpan",
+        "testing",
+        "monitoring"
     ],
 
     "prereqs" : {
