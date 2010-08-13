@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 23;
+use Test::More tests => 22;
 use File::Path;
 
 use CPAN::Testers::Data::Addresses;
@@ -70,4 +70,4 @@ unlink($logfile) if(-f $logfile);
     like($log[0], qr!\d{4}/\d\d/\d\d \d\d:\d\d:\d\d Start Again!, 'line 1 of log');
 }
 
-ok( unlink($logfile), 'removed 50logging.log' );
+unlink($logfile) if(-f $logfile);
