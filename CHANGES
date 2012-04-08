@@ -1,6 +1,9 @@
 Revision history for Perl distribution CPAN-Testers-Data-Addresses
 ==================================================================
 
+0.06	13/08/2010
+        - file removal test doesn't work on Windows :(
+
 0.05	11/08/2010
         - added META.json to the package files.
         - removed references to NNTPID.
