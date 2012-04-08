@@ -42,7 +42,7 @@
                 "Test::Pod": "1.00",
                 "Test::Pod::Coverage": "0.08",
                 "Test::CPAN::Meta": "0.13",
-                "Test::JSON::Meta": "0.08"
+                "Test::CPAN::Meta::JSON": "0.10"
             }
         }
     },
