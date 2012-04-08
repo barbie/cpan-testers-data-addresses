@@ -7,6 +7,7 @@ lib/CPAN/Testers/Data/Addresses.pm
 Makefile.PL
 MANIFEST
 META.yml
+META.json
 README
 t/01base.t
 t/05setup_db-cpanstats.t
@@ -21,5 +22,6 @@ t/90podtest.t
 t/91podcover.t
 t/94metatest.t
 t/95changedate.t
+t/96metatest.t
 t/test-config.ini
 t/01mailrc.txt

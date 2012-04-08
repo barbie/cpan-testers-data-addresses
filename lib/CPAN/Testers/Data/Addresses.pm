@@ -5,7 +5,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = '0.04';
+$VERSION = '0.05';
 $|++;
 
 #----------------------------------------------------------------------------
@@ -757,7 +757,7 @@ append any messages.
 
 =item * lastfile
 
-Path to the file containing the last NNTPID processed.
+Path to the file containing the last cpanstats record ID processed.
 
 =back
 
@@ -798,7 +798,7 @@ Attempts to map an address based on its domain.
 
 =item * _lastid
 
-Sets or returns the last NNTPID processed.
+Sets or returns the last cpanstats record ID processed.
 
 =item * _extract_email
 
@@ -868,7 +868,7 @@ F<http://blog.cpantesters.org/>
 
 =head1 COPYRIGHT AND LICENSE
 
-  Copyright (C) 2009 Barbie for Miss Barbell Productions.
+  Copyright (C) 2009,2010 Barbie for Miss Barbell Productions.
 
   This module is free software; you can redistribute it and/or
   modify it under the same terms as Perl itself.

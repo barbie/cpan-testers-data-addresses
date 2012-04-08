@@ -49,9 +49,9 @@ RT: http://rt.cpan.org/Public/Dist/Display.html?Name=CPAN-Testers-Data-Addresses
 
 AUTHOR & COPYRIGHT
 
-  Barbie <barbie@cpan.org> (C) 2009
+  Copyright (C) 2009,2010 Barbie <barbie@cpan.org>
 
 LICENCE
 
-  This package is free software; you can redistribute it and/or 
-  modify it under the same terms as Perl itself.
+  This module is free software; you can redistribute it and/or
+  modify it under the Artistic License 2.0.
