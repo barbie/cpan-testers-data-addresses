@@ -2,6 +2,7 @@ DROP TABLE IF EXISTS ixaddress;
 CREATE TABLE ixaddress (
     id          int(10) unsigned NOT NULL,
     addressid   int(10) unsigned NOT NULL,
+    fulldate	varchar(32),
   PRIMARY KEY  (id)
 ) ENGINE=MyISAM;
 

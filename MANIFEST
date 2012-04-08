@@ -6,8 +6,8 @@ examples/settings.ini
 lib/CPAN/Testers/Data/Addresses.pm
 Makefile.PL
 MANIFEST
-META.yml
 META.json
+META.yml
 README
 t/01base.t
 t/05setup_db-cpanstats.t

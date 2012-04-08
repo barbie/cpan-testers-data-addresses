@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 use strict;
 
-my $VERSION = '0.03';
+my $VERSION = '0.07';
 
 #----------------------------------------------------------------------------
 
@@ -49,8 +49,6 @@ $ctda->process();
 
 __END__
 
-=back
-
 =head1 BUGS, PATCHES & FIXES
 
 There are no known bugs at the time of this release. However, if you spot a
@@ -80,9 +78,9 @@ F<http://blog.cpantesters.org/>
 
 =head1 COPYRIGHT AND LICENSE
 
-  Copyright (C) 2009 Barbie for Miss Barbell Productions.
+  Copyright (C) 2009-2012 Barbie for Miss Barbell Productions.
 
   This module is free software; you can redistribute it and/or
-  modify it under the same terms as Perl itself.
+  modify it under the Artistic License 2.0.
 
 =cut

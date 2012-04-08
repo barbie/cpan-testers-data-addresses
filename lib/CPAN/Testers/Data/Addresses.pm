@@ -29,7 +29,7 @@ my (%backups);
 my %phrasebook = (
     'AllAddresses'          => q{SELECT * FROM tester_address},
     'AllAddressesFull'      => q{SELECT a.*,p.name,p.pause FROM tester_address AS a INNER JOIN tester_profile AS p ON p.testerid=a.testerid},
-    'UpdateAddressIndex'    => q{REPLACE INTO ixaddress (id,addressid) VALUES (?,?)},
+    'UpdateAddressIndex'    => q{REPLACE INTO ixaddress (id,addressid,fulldate) VALUES (?,?,?)},
 
     'InsertAddress'         => q{INSERT INTO tester_address (testerid,address,email) VALUES (0,?,?)},
     'GetAddressByText'      => q{SELECT addressid FROM tester_address WHERE address = ?},
@@ -39,7 +39,7 @@ my %phrasebook = (
     'GetTesterByName'       => q{SELECT testerid FROM tester_profile WHERE name = ?},
     'InsertTester'          => q{INSERT INTO tester_profile (name,pause) VALUES (?,?)},
 
-    'AllReports'            => q{SELECT id,tester FROM cpanstats WHERE state IN ('pass','fail','na','unknown') AND id > ? ORDER BY id},
+    'AllReports'            => q{SELECT id,tester,fulldate FROM cpanstats WHERE type=2 AND id > ? ORDER BY id},
     'GetTestersByMonth'     => q{SELECT DISTINCT tester FROM cpanstats WHERE postdate >= '%s' AND state IN ('pass','fail','na','unknown')},
     'GetTesters'            => q{SELECT DISTINCT tester FROM cpanstats WHERE state IN ('pass','fail','na','unknown')},
 
@@ -159,6 +159,8 @@ sub update {
 sub reindex {
     my $self = shift;
 
+    $self->_log("starting reindex");
+
     # load known addresses
     my %address;
     my $next = $self->{CPANSTATS}->iterator('hash',$phrasebook{'AllAddresses'});
@@ -167,22 +169,23 @@ sub reindex {
     }
 
     # search through reports updating the index
-    my $lastid = $self->{options}{lastid} || $self->_lastid();
+    my $lastid = defined $self->{options}{lastid} ? $self->{options}{lastid} : $self->_lastid();
     $next = $self->{CPANSTATS}->iterator('hash',$phrasebook{'AllReports'},$lastid);
     while( my $row = $next->() ) {
         #print STDERR "row: $row->{id} $row->{tester}\n";
         if($address{$row->{tester}}) {
-        #print STDERR ".. FOUND\n";
-            $self->{CPANSTATS}->do_query($phrasebook{'UpdateAddressIndex'},$row->{id},$address{$row->{tester}});
+            $self->_log("FOUND - row: $row->{id} $row->{tester}");
+            $self->{CPANSTATS}->do_query($phrasebook{'UpdateAddressIndex'},$row->{id},$address{$row->{tester}},$row->{fulldate});
         } else {
-        #print STDERR "..NEW\n";
+            $self->_log("NEW   - row: $row->{id} $row->{tester}");
             $address{$row->{tester}} = $self->{CPANSTATS}->id_query($phrasebook{'InsertAddress'},$row->{tester},_extract_email($row->{tester}));
-            $self->{CPANSTATS}->do_query($phrasebook{'UpdateAddressIndex'},$row->{id},$address{$row->{tester}});
+            $self->{CPANSTATS}->do_query($phrasebook{'UpdateAddressIndex'},$row->{id},$address{$row->{tester}},$row->{fulldate});
         }
 
         $lastid = $row->{id};
     }
     $self->_lastid($lastid);
+    $self->_log("stopping reindex");
 }
 
 sub backup {
@@ -469,7 +472,8 @@ sub _lastid {
 
 sub _extract_email {
     my $str = shift;
-    my ($email) = $str =~ /([-+=\w.]+\@(?:[-\w]+\.)+(?:com|net|org|info|biz|edu|museum|mil|gov|[a-z]{2,2}))/i;
+    #my ($email) = $str =~ /([-+=\w.]+\@(?:[-\w]+\.)+(?:com|net|org|info|biz|edu|museum|mil|gov|[a-z]{2,2}))/i;
+    my ($email) = $str =~ /([-+=\w.]+\@[-\w\.]+)/i;
     return $email || '';
 }
 
@@ -679,6 +683,7 @@ The schema for the MySQL database is below:
     CREATE TABLE ixaddress (
         id          int(10) unsigned NOT NULL,
         addressid   int(10) unsigned NOT NULL,
+        fulldate    varchar(32),
       PRIMARY KEY  (id)
     ) ENGINE=MyISAM;
 
@@ -686,14 +691,14 @@ The schema for the MySQL database is below:
         addressid   int(10) unsigned NOT NULL auto_increment,
         testerid    int(10) unsigned NOT NULL default 0,
         address     varchar(255) NOT NULL,
-        email	varchar(255) default NULL,
+        email       varchar(255) default NULL,
       PRIMARY KEY  (addressid)
     ) ENGINE=MyISAM;
 
     CREATE TABLE tester_profile (
         testerid    int(10) unsigned NOT NULL auto_increment,
-        name	varchar(255) default NULL,
-        pause	varchar(255) default NULL,
+        name        varchar(255) default NULL,
+        pause       varchar(255) default NULL,
       PRIMARY KEY  (testerid)
     ) ENGINE=MyISAM;
 
@@ -868,9 +873,9 @@ F<http://blog.cpantesters.org/>
 
 =head1 COPYRIGHT AND LICENSE
 
-  Copyright (C) 2009,2010 Barbie for Miss Barbell Productions.
+  Copyright (C) 2009-2012 Barbie for Miss Barbell Productions.
 
   This module is free software; you can redistribute it and/or
-  modify it under the same terms as Perl itself.
+  modify it under the Artistic License 2.0.
 
 =cut
