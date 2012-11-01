@@ -4,6 +4,8 @@ Revision history for Perl distribution CPAN-Testers-Data-Addresses
 	- spelling fixes. (thanks to Florian Schlichting & Gregor Herrmann).
         - CHANGES to Changes.
         - change file dates changed to meet W3CDTF standards.
+        - Artistic License v2 now sole license.
+        - added explicit LICENSE file.
 
 0.07	2012-04-08
 	- fixed POD error in supplementary script.

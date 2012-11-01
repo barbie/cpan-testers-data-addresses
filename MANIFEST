@@ -4,6 +4,7 @@ examples/getmailrc.pl
 examples/create-address.sql
 examples/settings.ini
 lib/CPAN/Testers/Data/Addresses.pm
+LICENSE
 Makefile.PL
 MANIFEST
 META.json
