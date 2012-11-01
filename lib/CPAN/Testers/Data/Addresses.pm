@@ -74,6 +74,7 @@ sub new {
 
 sub DESTROY {
     my $self = shift;
+    $self->{fh}->close  if($self->{fh});
 }
 
 __PACKAGE__->mk_accessors(qw( lastfile logfile logclean ));
@@ -223,6 +224,7 @@ sub backup {
 
 sub load_addresses {
     my $self = shift;
+    
     my $next = $self->{CPANSTATS}->iterator('hash',$phrasebook{'AllAddressesFull'});
     while( my $row = $next->() ) {
         $self->{paused_map}{$row->{pause}}   = { name => $row->{name}, pause => $row->{pause}, addressid => $row->{addressid}, testerid => $row->{testerid}, match => '# MAPPED PAUSE' }  if($row->{pause});
@@ -241,6 +243,7 @@ sub load_addresses {
         $self->_log( "address entries = " . scalar(keys %{ $self->{address_map} }) . "\n" );
         $self->_log( "domain entries  = " . scalar(keys %{ $self->{domain_map}  }) . "\n" );
     }
+
     $next = $self->{CPANSTATS}->iterator('hash',$phrasebook{'AllAddresses'});
     while( my $row = $next->() ) {
         next    if($self->{parsed_map}{$row->{address}});
@@ -341,23 +344,27 @@ sub match_addresses {
 
 sub print_addresses {
     my $self = shift;
+    my $text = '';
+
     if($self->{result}{NOMAIL}) {
-        print "ERRORS:\n";
+        $self->_printout( "ERRORS:" );
         for my $email (sort @{$self->{result}{NOMAIL}}) {
-            print "NOMAIL: $email\n";
+            $self->_printout( "NOMAIL: $email" );
         }
     }
 
-    print "\nMATCH:\n";
+    $self->_printout( "\nMATCH:" );
     for my $key (sort {$self->{unparsed_map}{$a} cmp $self->{unparsed_map}{$b}} keys %{ $self->{unparsed_map} }) {
         if($self->{unparsed_map}{$key}->{match}) {
-            printf "%d,%d,%s,%s,%s,%s\n", 
-                ($self->{unparsed_map}{$key}->{addressid} || 0),
-                ($self->{unparsed_map}{$key}->{testerid}  || 0),
-                $key,
-                ($self->{unparsed_map}{$key}->{name}  || ''),
-                ($self->{unparsed_map}{$key}->{pause} || ''),
-                ($self->{unparsed_map}{$key}->{match} || '');
+            $self->_printout(
+                sprintf "%d,%d,%s,%s,%s,%s", 
+                    ($self->{unparsed_map}{$key}->{addressid} || 0),
+                    ($self->{unparsed_map}{$key}->{testerid}  || 0),
+                    $key,
+                    ($self->{unparsed_map}{$key}->{name}  || ''),
+                    ($self->{unparsed_map}{$key}->{pause} || ''),
+                    ($self->{unparsed_map}{$key}->{match} || '')
+            );
             delete $self->{unparsed_map}{$key};
         } else {
             my ($local,$domain) = $self->{unparsed_map}{$key}->{email} =~ /([-+=\w.]+)\@([^\s]+)/;
@@ -372,23 +379,25 @@ sub print_addresses {
         }
     }
 
-    print "\n";
+    $self->_printout( '' );
     return  if($self->{options}{match});
 
     #use Data::Dumper;
     #print STDERR Dumper(\%{ $self->{unparsed_map} });
 
     my @mails;
-    print "PATTERNS:\n";
+    $self->_printout( "PATTERNS:" );
     for my $key (sort { $self->{unparsed_map}{$a}{'sort'} cmp $self->{unparsed_map}{$b}{'sort'} } keys %{ $self->{unparsed_map} }) {
         next    unless($key);
-        printf "%d,%d,%s,%s,%s,%s\n", 
+        $self->_printout( 
+            sprintf "%d,%d,%s,%s,%s,%s", 
                 ($self->{unparsed_map}{$key}->{addressid} || 0),
                 ($self->{unparsed_map}{$key}->{testerid}  || 0),
                 $key,
                 ($self->{unparsed_map}{$key}->{name}  || ''),
                 ($self->{unparsed_map}{$key}->{pause} || ''),
-                ($self->{unparsed_map}{$key}->{match} || '') . "\t" . $self->{unparsed_map}{$key}->{'sort'};
+                ($self->{unparsed_map}{$key}->{match} || '') . "\t" . $self->{unparsed_map}{$key}->{'sort'}
+        );
     }
 }
 
@@ -481,7 +490,7 @@ sub _init_options {
     my $self = shift;
     my %hash = @_;
     $self->{options} = {};
-    my @options = qw(mailrc update reindex lastid backup month match verbose lastfile logfile logclean);
+    my @options = qw(mailrc update reindex lastid backup month match verbose lastfile logfile logclean output);
 
     GetOptions( $self->{options},
 
@@ -504,6 +513,7 @@ sub _init_options {
         'match',
 
         # other options
+        'output=s',
         'lastfile=s',
         'verbose|v',
         'help|h'
@@ -583,6 +593,13 @@ sub _init_options {
     $self->logfile($self->{options}{logfile});
     $self->logclean($self->{options}{logclean});
 
+    # set output 
+    if($self->{options}{output}) {
+        if(my $fh = IO::File->new($self->{options}{output}, 'w+')) {
+            $self->{fh} = $fh;
+        }
+    }
+
     return  unless($self->{options}{verbose});
     print STDERR "config: $_ = ".($self->{options}{$_}||'')."\n"  for(@options);
 }
@@ -600,6 +617,7 @@ sub _help {
         print "         | [--reindex] [--lastid=<num>] \\\n";
         print "         | [--backup] \\\n";
         print "         | [--mailrc|m=<file>] [--month=<string>] [--match] ) \\\n";
+        print "         [--output=<file>] \n\n";
         print "         [--logfile=<file>] [--logclean=(0|1)] \n\n";
 
 #              12345678901234567890123456789012345678901234567890123456789012345678901234567890
@@ -608,6 +626,7 @@ sub _help {
         print "\nFunctional Options:\n";
         print "   --config=<file>           # path/file to configuration file\n";
         print "  [--mailrc=<file>]          # path/file to mailrc file\n";
+        print "  [--output=<file>]          # path/file to output file (defaults to STDOUT)\n";
 
         print "\nUpdate Options:\n";
         print "  [--update]                 # run in update mode\n";
@@ -632,6 +651,15 @@ sub _help {
 
     print "$0 v$VERSION\n";
     exit(0);
+}
+
+sub _printout {
+    my $self = shift;
+    if(my $fh = $self->{fh}) {
+        print $fh "@_\n";
+    } else {
+        print STDOUT "@_\n";
+    }
 }
 
 sub _log {
