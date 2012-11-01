@@ -1,6 +1,8 @@
 Revision history for Perl distribution CPAN-Testers-Data-Addresses
 ==================================================================
 
+	- spelling fixes. (thanks to Florian Schlichting & Gregor Herrmann).
+
 0.07	08/04/2012
 	- fixed POD error in supplementary script.
 	- updated SQL to include fulldate.
