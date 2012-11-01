@@ -1,10 +1,20 @@
-use 5.006; #due to 'warnings' pragma
-use ExtUtils::MakeMaker;
-WriteMakefile(
-    'NAME'          => 'CPAN::Testers::Data::Addresses',
-    'VERSION_FROM'  => 'lib/CPAN/Testers/Data/Addresses.pm',
-    'PREREQ_PM'     => {
+#!/usr/bin/perl
 
+use strict;
+use warnings;
+use 5.006;
+
+use ExtUtils::MakeMaker;
+
+WriteMakefile(
+    AUTHOR              => 'Barbie <barbie@cpan.org>',
+    NAME                => 'CPAN::Testers::Data::Addresses',
+    VERSION_FROM        => 'lib/CPAN/Testers/Data/Addresses.pm',
+    ABSTRACT            => 'CPAN Testers Addresses Database Manager',
+    NO_META             => 1,
+    PREREQ_PM           => {
+
+        # runtime prereqs
         'Class::Accessor::Fast'             => 0,
         'CPAN::Testers::Common::DBUtils'    => 0,
         'Config::IniFiles'                  => 0,
@@ -14,17 +24,11 @@ WriteMakefile(
         'Getopt::Long'                      => 0,
         'IO::File'                          => 0,
 
-        'Test::More'                        => 0,       # only for testing
-
         'DBD::mysql'                        => 0,
         'DBD::SQLite'                       => 0,
-    },
 
-    'PL_FILES'      => {},
-    'INSTALLDIRS'   => 'site',
-    NO_META         => 1,
+        # build/test prereqs
+        'Test::More'                        => '0.70',
 
-    ($] >= 5.005 ?    ## Add these new keywords supported since 5.005
-      (ABSTRACT	=> 'CPAN Testers Addresses Database Manager',
-       AUTHOR	=> 'Barbie <barbie@cpan.org>') : ()),
+    }
 );

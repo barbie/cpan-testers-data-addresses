@@ -21,6 +21,7 @@
     "prereqs" : {
         "runtime" : {
             "requires" : {
+                "perl": "5.006",
                 "Class::Accessor::Fast": "0",
                 "CPAN::Testers::Common::DBUtils": "0",
                 "Config::IniFiles": "0",
@@ -35,14 +36,13 @@
         },
         "test" : {
             "requires": {
-                "Test::More": "0.45"
+                "Test::More": "0.70"
             },
             "recommends": {
-                "Test::More": "0.70",
+                "Test::CPAN::Meta": "0",
+                "Test::CPAN::Meta::JSON": "0",
                 "Test::Pod": "1.00",
-                "Test::Pod::Coverage": "0.08",
-                "Test::CPAN::Meta": "0.13",
-                "Test::CPAN::Meta::JSON": "0.10"
+                "Test::Pod::Coverage": "0.08"
             }
         }
     },

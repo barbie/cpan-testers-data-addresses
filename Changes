@@ -6,6 +6,8 @@ Revision history for Perl distribution CPAN-Testers-Data-Addresses
         - change file dates changed to meet W3CDTF standards.
         - Artistic License v2 now sole license.
         - added explicit LICENSE file.
+        - added minimum perl version (5.006).
+        - reworked Makefile.PL for clarity.
 
 0.07	2012-04-08
 	- fixed POD error in supplementary script.
