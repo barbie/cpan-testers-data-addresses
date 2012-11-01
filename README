@@ -10,6 +10,7 @@ The distribution requires the following modules:
   Class::Accessor::Fast
   CPAN::Testers::Common::DBUtils
   Config::IniFiles
+  DBI
   DBD::mysql
   DBD::SQLite
   File::Basename

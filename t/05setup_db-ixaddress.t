@@ -1,7 +1,6 @@
-#!perl
-
+#!/usr/bin/perl -w
 use strict;
-use warnings;
+
 use Test::More tests => 2;
 use DBI;
 use File::Spec;

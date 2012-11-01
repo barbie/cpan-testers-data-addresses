@@ -25,6 +25,7 @@
                 "Class::Accessor::Fast": "0",
                 "CPAN::Testers::Common::DBUtils": "0",
                 "Config::IniFiles": "0",
+                "DBI": "0",
                 "DBD::mysql": "0",
                 "DBD::SQLite": "0",
                 "File::Basename": "0",

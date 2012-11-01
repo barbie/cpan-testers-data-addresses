@@ -24,6 +24,8 @@ WriteMakefile(
         'Getopt::Long'                      => 0,
         'IO::File'                          => 0,
 
+        # indirect runtime prereqs
+        'DBI'                               => 0,
         'DBD::mysql'                        => 0,
         'DBD::SQLite'                       => 0,
 
