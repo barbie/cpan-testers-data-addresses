@@ -77,7 +77,7 @@ sub DESTROY {
     $self->{fh}->close  if($self->{fh});
 }
 
-__PACKAGE__->mk_accessors(qw( lastfile logfile logclean ));
+__PACKAGE__->mk_accessors(qw( lastfile logfile logclean dbh ));
 
 sub process {
     my $self = shift;
@@ -114,7 +114,7 @@ sub update {
 
     my $fh = IO::File->new($self->{options}{update})    or die "Cannot open mailrc file [$self->{options}{update}]: $!";
     while(<$fh>) {
-        next    unless(/^(\d+),(\d+),([^,]+),([^,]+),([^,]*),/);
+        next    unless(/^(\d+),(\d+),([^,]+),([^,]+),([^,]*)/);
         my ($addressid,$testerid,$address,$name,$pause) = ($1,$2,$3,$4,$5);
         unless($address && $name) {
             $self->_log("... bogus line: $_");
@@ -124,34 +124,34 @@ sub update {
         $all++;
         if($testerid == 0) {
             my @rows;
-            @rows = $self->{CPANSTATS}->get_query('hash',$phrasebook{'GetTesterByPause'},$pause)    if($pause);
+            @rows = $self->dbh->get_query('hash',$phrasebook{'GetTesterByPause'},$pause)    if($pause);
             unless(@rows) {
-                @rows = $self->{CPANSTATS}->get_query('hash',$phrasebook{'GetTesterByName'},$name);
+                @rows = $self->dbh->get_query('hash',$phrasebook{'GetTesterByName'},$name);
             }
 
             if(@rows) {
                 $testerid = $rows[0]->{testerid};
             } else {
-                $testerid = $self->{CPANSTATS}->id_query($phrasebook{'InsertTester'},$name,$pause);
+                $testerid = $self->dbh->id_query($phrasebook{'InsertTester'},$name,$pause);
                 $new++;
             }
         }
 
         if($addressid == 0) {
-            my @rows = $self->{CPANSTATS}->get_query('hash',$phrasebook{'GetAddressByText'},$address);
+            my @rows = $self->dbh->get_query('hash',$phrasebook{'GetAddressByText'},$address);
             if(@rows) {
                 $addressid = $rows[0]->{addressid};
             } else {
-                $addressid = $self->{CPANSTATS}->id_query($phrasebook{'InsertAddress'},$address,_extract_email($address));
+                $addressid = $self->dbh->id_query($phrasebook{'InsertAddress'},$address,_extract_email($address));
             }
         }
 
-        $self->{CPANSTATS}->do_query($phrasebook{'LinkAddress'},$testerid,$addressid);
+        $self->dbh->do_query($phrasebook{'LinkAddress'},$testerid,$addressid);
         $self->_log("... profile => address: ($testerid,$name,$pause) => ($addressid,$address)");
     }
 
-    print "$all addresses mapped\n";
-    print "$new new addresses\n";
+    $self->_printout("$all addresses mapped");
+    $self->_printout("$new new addresses");
 
     $self->_log("$all addresses mapped, $new new addresses");
     $self->_log("stopping update");
@@ -164,23 +164,23 @@ sub reindex {
 
     # load known addresses
     my %address;
-    my $next = $self->{CPANSTATS}->iterator('hash',$phrasebook{'AllAddresses'});
+    my $next = $self->dbh->iterator('hash',$phrasebook{'AllAddresses'});
     while( my $row = $next->() ) {
         $address{$row->{address}} = $row->{addressid};
     }
 
     # search through reports updating the index
     my $lastid = defined $self->{options}{lastid} ? $self->{options}{lastid} : $self->_lastid();
-    $next = $self->{CPANSTATS}->iterator('hash',$phrasebook{'AllReports'},$lastid);
+    $next = $self->dbh->iterator('hash',$phrasebook{'AllReports'},$lastid);
     while( my $row = $next->() ) {
         #print STDERR "row: $row->{id} $row->{tester}\n";
         if($address{$row->{tester}}) {
             $self->_log("FOUND - row: $row->{id} $row->{tester}");
-            $self->{CPANSTATS}->do_query($phrasebook{'UpdateAddressIndex'},$row->{id},$address{$row->{tester}},$row->{fulldate});
+            $self->dbh->do_query($phrasebook{'UpdateAddressIndex'},$row->{id},$address{$row->{tester}},$row->{fulldate});
         } else {
             $self->_log("NEW   - row: $row->{id} $row->{tester}");
-            $address{$row->{tester}} = $self->{CPANSTATS}->id_query($phrasebook{'InsertAddress'},$row->{tester},_extract_email($row->{tester}));
-            $self->{CPANSTATS}->do_query($phrasebook{'UpdateAddressIndex'},$row->{id},$address{$row->{tester}},$row->{fulldate});
+            $address{$row->{tester}} = $self->dbh->id_query($phrasebook{'InsertAddress'},$row->{tester},_extract_email($row->{tester}));
+            $self->dbh->do_query($phrasebook{'UpdateAddressIndex'},$row->{id},$address{$row->{tester}},$row->{fulldate});
         }
 
         $lastid = $row->{id};
@@ -202,7 +202,7 @@ sub backup {
 
     $self->_log("Backup via DBD drivers");
 
-    my $rows = $self->{CPANSTATS}->iterator('array',$phrasebook{'SelectBackup'});
+    my $rows = $self->dbh->iterator('array',$phrasebook{'SelectBackup'});
     while(my $row = $rows->()) {
         for my $driver (keys %{$self->{backups}}) {
             $self->{backups}{$driver}{db}->do_query($phrasebook{'InsertBackup'},@$row);
@@ -225,7 +225,7 @@ sub backup {
 sub load_addresses {
     my $self = shift;
     
-    my $next = $self->{CPANSTATS}->iterator('hash',$phrasebook{'AllAddressesFull'});
+    my $next = $self->dbh->iterator('hash',$phrasebook{'AllAddressesFull'});
     while( my $row = $next->() ) {
         $self->{paused_map}{$row->{pause}}   = { name => $row->{name}, pause => $row->{pause}, addressid => $row->{addressid}, testerid => $row->{testerid}, match => '# MAPPED PAUSE' }  if($row->{pause});
         $self->{parsed_map}{$row->{address}} = { name => $row->{name}, pause => $row->{pause}, addressid => $row->{addressid}, testerid => $row->{testerid}, match => '# MAPPED ADDRESS' };
@@ -244,7 +244,7 @@ sub load_addresses {
         $self->_log( "domain entries  = " . scalar(keys %{ $self->{domain_map}  }) . "\n" );
     }
 
-    $next = $self->{CPANSTATS}->iterator('hash',$phrasebook{'AllAddresses'});
+    $next = $self->dbh->iterator('hash',$phrasebook{'AllAddresses'});
     while( my $row = $next->() ) {
         next    if($self->{parsed_map}{$row->{address}});
         $self->{stored_map}{$row->{address}} = { name => '', pause => '', addressid => $row->{addressid}, testerid => 0, match => '# STORED ADDRESS' };
@@ -278,7 +278,7 @@ sub load_addresses {
     if($self->{options}{verbose}) {
         $self->_log( "sql = $sql\n" );
     }
-    $next = $self->{CPANSTATS}->iterator('array',$sql);
+    $next = $self->dbh->iterator('array',$sql);
     $self->{parsed} = 0;
     while(my $row = $next->()) {
         $self->{parsed}++;
@@ -535,8 +535,8 @@ sub _init_options {
     my $db = 'CPANSTATS';
     die "No configuration for $db database\n"   unless($cfg->SectionExists($db));
     $opts{$_} = $cfg->val($db,$_)   for(qw(driver database dbfile dbhost dbport dbuser dbpass));
-    $self->{$db} = CPAN::Testers::Common::DBUtils->new(%opts);
-    die "Cannot configure $db database\n" unless($self->{$db});
+    $self->dbh( CPAN::Testers::Common::DBUtils->new(%opts) );
+    die "Cannot configure $db database\n" unless($self->dbh);
 
     # use configuration settings or defaults if none provided
     for my $opt (@options) {

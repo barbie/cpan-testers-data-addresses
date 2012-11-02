@@ -1,42 +1,46 @@
 #!/usr/bin/perl -w
 use strict;
 
-use Test::More tests => 11;
 use CPAN::Testers::Data::Addresses;
-use File::Slurp;
 use Data::Dumper;
+use File::Spec;
+use File::Slurp;
+use Test::More tests => 12;
+
+my $config = File::Spec->catfile('t','_DBDIR','test-config.ini');
+my $output = File::Spec->catfile('t','_DBDIR','output.txt');
 
 ## Test Data
 
 my %results = (
     parsed_map => {
-        '4' => {
-            'testerid' => 'BINGOS',
-            'pause' => undef,
+        'srezic@cpan.org' => {
+            'testerid' => 2,
+            'pause' => 'SREZIC',
             'match' => '# MAPPED ADDRESS',
-            'name' => undef,
-            'addressid' => '4|bingos@cpan.org|bingos@cpan.org'
-            },
-        '1' => {
-            'testerid' => 'JOST',
-            'pause' => undef,
-            'match' => '# MAPPED ADDRESS',
-            'name' => undef,
-            'addressid' => '1|kriegjcb@mi.ruhr-uni-bochum.de ((Jost Krieger))|kriegjcb@mi.ruhr-uni-bochum.de'
+            'name' => 'Slaven Rezi&#x0107;',
+            'addressid' => 2
         },
-        '3' => {
-            'testerid' => 'JONALLEN',
-            'pause' => undef,
+        'bingos@cpan.org' => {
+            'testerid' => 4,
+            'pause' => 'BINGOS',
             'match' => '# MAPPED ADDRESS',
-            'name' => undef,
-            'addressid' => '3|jj@jonallen.info ("JJ")|jj@jonallen.info'
+            'name' => 'Chris Williams',
+            'addressid' => 4
         },
-        '2' => {
-            'testerid' => 'SREZIC',
-            'pause' => undef,
+        'jj@jonallen.info ("JJ")' => {
+            'testerid' => 3,
+            'pause' => 'JONALLEN',
             'match' => '# MAPPED ADDRESS',
-            'name' => undef,
-            'addressid' => '2|srezic@cpan.org|srezic@cpan.org'
+            'name' => 'Jon Allen',
+            'addressid' => 3
+        },
+        'kriegjcb@mi.ruhr-uni-bochum.de ((Jost Krieger))' => {
+            'testerid' => 1,
+            'pause' => 'JOST',
+            'match' => '# MAPPED ADDRESS',
+            'name' => 'Jost Krieger',
+            'addressid' => 1
         }
     },
     stored_map => {},
@@ -63,11 +67,11 @@ my %results = (
             'addressid' => 0
         },
         'jonallen' => {
-            'testerid' => 0,
+            'testerid' => 3,
             'pause' => 'JONALLEN',
             'match' => '# PAUSE ID',
             'name' => 'Jon Allen',
-            'addressid' => 0
+            'addressid' => 3
         },
         'bingos' => {
             'testerid' => 0,
@@ -100,11 +104,11 @@ my %results = (
             'addressid' => 0
         },
         'jj@jonallen.info' => {
-            'testerid' => 0,
+            'testerid' => 3,
             'pause' => 'JONALLEN',
             'match' => '# CPAN EMAIL',
             'name' => 'Jon Allen',
-            'addressid' => 0
+            'addressid' => 3
         },
         'barbie@missbarbell.co.uk' => {
             'testerid' => 0,
@@ -115,33 +119,33 @@ my %results = (
         }
     },
     address_map => {
-        'Jost Krieger' => {
-            'testerid' => 'JOST',
-            'pause' => undef,
+        'srezic@cpan.org' => {
+            'testerid' => 2,
+            'pause' => 'SREZIC',
             'match' => '# MAPPED EMAIL',
-            'name' => undef,
-            'addressid' => '1|kriegjcb@mi.ruhr-uni-bochum.de ((Jost Krieger))|kriegjcb@mi.ruhr-uni-bochum.de'
+            'name' => 'Slaven Rezi&#x0107;',
+            'addressid' => 2
         },
-        'Chris Williams' => {
-            'testerid' => 'BINGOS',
-            'pause' => undef,
+        'kriegjcb@mi.ruhr-uni-bochum.de' => {
+            'testerid' => 1,
+            'pause' => 'JOST',
             'match' => '# MAPPED EMAIL',
-            'name' => undef,
-            'addressid' => '4|bingos@cpan.org|bingos@cpan.org'
+            'name' => 'Jost Krieger',
+            'addressid' => 1
         },
-        'Slaven Rezi&#x0107;' => {
-            'testerid' => 'SREZIC',
-            'pause' => undef,
+        'bingos@cpan.org' => {
+            'testerid' => 4,
+            'pause' => 'BINGOS',
             'match' => '# MAPPED EMAIL',
-            'name' => undef,
-            'addressid' => '2|srezic@cpan.org|srezic@cpan.org'
+            'name' => 'Chris Williams',
+            'addressid' => 4
         },
-        'Jon Allen' => {
-            'testerid' => 'JONALLEN',
-            'pause' => undef,
+        'jj@jonallen.info' => {
+            'testerid' => 3,
+            'pause' => 'JONALLEN',
             'match' => '# MAPPED EMAIL',
-            'name' => undef,
-            'addressid' => '3|jj@jonallen.info ("JJ")|jj@jonallen.info'
+            'name' => 'Jon Allen',
+            'addressid' => 3
         }
     },
     unparsed_map => {
@@ -151,32 +155,14 @@ my %results = (
             'sort' => '',
             'addressid' => 0
         },
-        'cpan@sourcentral.org ("Oliver Paukstadt")' => {
-            'email' => 'cpan@sourcentral.org',
-            'testerid' => 0,
-            'sort' => '',
-            'addressid' => 0
-        },
-        'srezic@cpan.org' => {
-            'email' => 'srezic@cpan.org',
+        '"Josts Smokehouse" <JOST@cpan.org>' => {
+            'email' => 'JOST@cpan.org',
             'testerid' => 0,
             'sort' => '',
             'addressid' => 0
         },
         'imacat@mail.imacat.idv.tw' => {
             'email' => 'imacat@mail.imacat.idv.tw',
-            'testerid' => 0,
-            'sort' => '',
-            'addressid' => 0
-        },
-        'bingos@cpan.org' => {
-            'email' => 'bingos@cpan.org',
-            'testerid' => 0,
-            'sort' => '',
-            'addressid' => 0
-        },
-        'rhaen@cpan.org (Ulrich Habel)' => {
-            'email' => 'rhaen@cpan.org',
             'testerid' => 0,
             'sort' => '',
             'addressid' => 0
@@ -193,20 +179,14 @@ my %results = (
             'sort' => '',
             'addressid' => 0
         },
-        'jj@jonallen.info ("JJ")' => {
-            'email' => 'jj@jonallen.info',
+        '"Oliver Paukstadt" <cpan@sourcentral.org>' => {
+            'email' => 'cpan@sourcentral.org',
             'testerid' => 0,
             'sort' => '',
             'addressid' => 0
         },
-        'JOST@cpan.org ("Josts Smokehouse")' => {
-            'email' => 'JOST@cpan.org',
-            'testerid' => 0,
-            'sort' => '',
-            'addressid' => 0
-        },
-        'kriegjcb@mi.ruhr-uni-bochum.de ((Jost Krieger))' => {
-            'email' => 'kriegjcb@mi.ruhr-uni-bochum.de',
+        'Ulrich Habel <rhaen@cpan.org>' => {
+            'email' => 'rhaen@cpan.org',
             'testerid' => 0,
             'sort' => '',
             'addressid' => 0
@@ -215,28 +195,48 @@ my %results = (
 );
 
 
-### Prepare object
+SKIP: {
+    skip "Unable to locate config file [$config]", 12   unless(-f $config);
 
-my $f = 't/_DBDIR/output.txt';
-unlink($f)  if(-f $f);
+    ### Prepare object
 
-ok( my $obj = CPAN::Testers::Data::Addresses->new(config => 't/test-config.ini', output => $f), "got object" );
+    unlink($output)  if(-f $output);
+    ok( my $obj = CPAN::Testers::Data::Addresses->new(config => $config, output => $output), "got object" );
 
-### Test Underlying Process Methods
+    ### Test Underlying Process Methods
 
-$obj->load_addresses;
-is_deeply( $obj->{$_}, $results{$_}, ".. load - $_") for(qw(parsed_map stored_map pause_map cpan_map address_map unparsed_map));
-#diag("$_:" . Dumper($obj->{$_}))    for(qw(parsed_map stored_map pause_map cpan_map address_map unparsed_map));
+    $obj->load_addresses;
+    is_deeply( $obj->{$_}, $results{$_}, ".. load - $_") for(qw(parsed_map stored_map pause_map cpan_map address_map unparsed_map));
+    #diag("$_:" . Dumper($obj->{$_}))    for(qw(parsed_map stored_map pause_map cpan_map address_map unparsed_map));
+    #diag("$_:" . Dumper($obj->{$_}))    for(qw(unparsed_map));
 
-$obj->match_addresses;
-is_deeply( $obj->{result}{NOEMAIL}, undef, '.. load - NOEMAIL');
+    $obj->match_addresses;
+    is_deeply( $obj->{result}{NOEMAIL}, undef, '.. load - NOEMAIL');
 
-$obj->print_addresses;
-$obj = undef;
+    $obj->print_addresses;
+    $obj = undef;
 
-my $text = read_file($f);
-unlike($text, qr/ERRORS:/, '.. found no errors');
-like($text, qr/MATCH:/,    '.. found matches');
-like($text, qr/PATTERNS:/, '.. found patterns');
+    my $text = read_file($output);
+    unlike($text, qr/ERRORS:/, '.. found no errors');
+    like($text, qr/MATCH:/,    '.. found matches');
+    like($text, qr/PATTERNS:/, '.. found patterns');
 
-### Test Direct Process Methods
+    ### Test Direct Process Methods
+
+    # test update process
+    my $f = 't/_DBDIR/update.txt';
+    write_file($f,'0,0,barbie@missbarbell.co.uk,Barbie,BARBIE');
+    $obj = CPAN::Testers::Data::Addresses->new(config => $config, update => $f);
+
+    my $dbh = $obj->dbh;
+    my @ct1 = $dbh->get_query('array','select count(*) from tester_profile');
+
+    $obj->process;
+
+    my @ct2 = $dbh->get_query('array','select count(*) from tester_profile');
+    is($ct2[0]->[0] - $ct1[0]->[0], 1, '.. 1 address added');
+
+    #TODO:
+    #$obj = CPAN::Testers::Data::Addresses->new(config => 't/test-config.ini', reindex => 1);
+    #$obj = CPAN::Testers::Data::Addresses->new(config => 't/test-config.ini', backup => 1);
+}

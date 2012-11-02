@@ -10,6 +10,7 @@ Revision history for Perl distribution CPAN-Testers-Data-Addresses
         - reworked Makefile.PL for clarity.
         - test suite updates.
         - added support for writing to named output file.
+        - updated tests to use Test::Database.
 
 0.07    2012-04-08
         - fixed POD error in supplementary script.
