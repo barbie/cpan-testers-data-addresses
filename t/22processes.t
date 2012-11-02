@@ -5,7 +5,7 @@ use CPAN::Testers::Data::Addresses;
 use Data::Dumper;
 use File::Spec;
 use File::Slurp;
-use Test::More tests => 12;
+use Test::More tests => 19;
 
 my $config = File::Spec->catfile('t','_DBDIR','test-config.ini');
 my $output = File::Spec->catfile('t','_DBDIR','output.txt');
@@ -196,12 +196,12 @@ my %results = (
 
 
 SKIP: {
-    skip "Unable to locate config file [$config]", 12   unless(-f $config);
+    skip "Unable to locate config file [$config]", 19   unless(-f $config);
 
     ### Prepare object
-
+    my $obj;
     unlink($output)  if(-f $output);
-    ok( my $obj = CPAN::Testers::Data::Addresses->new(config => $config, output => $output), "got object" );
+    ok( $obj = CPAN::Testers::Data::Addresses->new(config => $config, output => $output), "got object" );
 
     ### Test Underlying Process Methods
 
@@ -230,13 +230,29 @@ SKIP: {
 
     my $dbh = $obj->dbh;
     my @ct1 = $dbh->get_query('array','select count(*) from tester_profile');
-
     $obj->process;
-
     my @ct2 = $dbh->get_query('array','select count(*) from tester_profile');
     is($ct2[0]->[0] - $ct1[0]->[0], 1, '.. 1 address added');
 
+    # test search process
+    unlink($output)  if(-f $output);
+    ok( $obj = CPAN::Testers::Data::Addresses->new(config => $config, output => $output), "got object" );
+    $dbh = $obj->dbh;
+    $obj->process;
+    $obj = undef;
+
+    $text = read_file($output);
+    unlike($text, qr/ERRORS:/, '.. found no errors');
+    like($text, qr/MATCH:/,    '.. found matches');
+    like($text, qr/PATTERNS:/, '.. found patterns');
+
+    # test reindex
+    ok( $obj = CPAN::Testers::Data::Addresses->new(config => $config, reindex => 1), "got object" );
+    is( $obj->_lastid, 0, "before reindex" );
+    $obj->process;
+    is( $obj->_lastid, 2975969, "after reindex" );
+
+
     #TODO:
-    #$obj = CPAN::Testers::Data::Addresses->new(config => 't/test-config.ini', reindex => 1);
     #$obj = CPAN::Testers::Data::Addresses->new(config => 't/test-config.ini', backup => 1);
 }

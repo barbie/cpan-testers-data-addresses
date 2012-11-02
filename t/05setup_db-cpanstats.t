@@ -212,7 +212,8 @@ sub create_sqlite_databases {
 
         'CREATE TABLE ixaddress (
             id          INTEGER NOT NULL,
-            addressid   INTEGER NOT NULL
+            addressid   INTEGER NOT NULL,
+            fulldate    TEXT
         )',
 
         'CREATE TABLE tester_address (
@@ -259,10 +260,11 @@ sub create_mysql_databases {
         'CREATE INDEX ixplat ON cpanstats (platform)',
         'CREATE INDEX ixdate ON cpanstats (postdate)',
 
-        'CREATE TABLE ixaddress (
+        q{CREATE TABLE ixaddress (
             id          int(10) unsigned    NOT NULL,
-            addressid   int(10) unsigned    NOT NULL
-        )',
+            addressid   int(10) unsigned    NOT NULL,
+            fulldate    varchar(32)         DEFAULT ''
+        )},
 
         q{CREATE TABLE tester_address (
             addressid   int(10) unsigned    NOT NULL AUTO_INCREMENT,
