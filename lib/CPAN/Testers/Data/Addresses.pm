@@ -31,7 +31,7 @@ my %phrasebook = (
     'AllAddressesFull'      => q{SELECT a.*,p.name,p.pause FROM tester_address AS a INNER JOIN tester_profile AS p ON p.testerid=a.testerid},
     'UpdateAddressIndex'    => q{REPLACE INTO ixaddress (id,addressid,fulldate) VALUES (?,?,?)},
 
-    'InsertAddress'         => q{INSERT INTO tester_address (testerid,address,email) VALUES (0,?,?)},
+    'InsertAddress'         => q{INSERT INTO tester_address (testerid,address,email) VALUES (?,?,?)},
     'GetAddressByText'      => q{SELECT addressid FROM tester_address WHERE address = ?},
     'LinkAddress'           => q{UPDATE tester_address SET testerid=? WHERE addressid=?},
 
@@ -142,7 +142,7 @@ sub update {
             if(@rows) {
                 $addressid = $rows[0]->{addressid};
             } else {
-                $addressid = $self->dbh->id_query($phrasebook{'InsertAddress'},$address,_extract_email($address));
+                $addressid = $self->dbh->id_query($phrasebook{'InsertAddress'},$testerid,$address,_extract_email($address));
             }
         }
 
@@ -179,7 +179,7 @@ sub reindex {
             $self->dbh->do_query($phrasebook{'UpdateAddressIndex'},$row->{id},$address{$row->{tester}},$row->{fulldate});
         } else {
             $self->_log("NEW   - row: $row->{id} $row->{tester}");
-            $address{$row->{tester}} = $self->dbh->id_query($phrasebook{'InsertAddress'},$row->{tester},_extract_email($row->{tester}));
+            $address{$row->{tester}} = $self->dbh->id_query($phrasebook{'InsertAddress'},0,$row->{tester},_extract_email($row->{tester}));
             $self->dbh->do_query($phrasebook{'UpdateAddressIndex'},$row->{id},$address{$row->{tester}},$row->{fulldate});
         }
 
