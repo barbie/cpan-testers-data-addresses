@@ -189,8 +189,9 @@ sub create_sqlite_databases {
 
     my @create_cpanstats = (
         'PRAGMA auto_vacuum = 1',
+        'DROP TABLE IF EXISTS cpanstats',
         'CREATE TABLE cpanstats (
-            id          INTEGER PRIMARY KEY,
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
             guid        TEXT,
             state       TEXT,
             postdate    TEXT,
@@ -209,6 +210,10 @@ sub create_sqlite_databases {
         'CREATE INDEX ixperl ON cpanstats (perl)',
         'CREATE INDEX ixplat ON cpanstats (platform)',
         'CREATE INDEX ixdate ON cpanstats (postdate)',
+
+        'DROP TABLE IF EXISTS ixaddress',
+        'DROP TABLE IF EXISTS tester_address',
+        'DROP TABLE IF EXISTS tester_profile',
 
         'CREATE TABLE ixaddress (
             id          INTEGER NOT NULL,
@@ -237,6 +242,8 @@ sub create_mysql_databases {
     my $db = shift;
 
     my @create_cpanstats = (
+        'DROP TABLE IF EXISTS cpanstats',
+
         q{CREATE TABLE `cpanstats` (
             `id`        int(10) unsigned    NOT NULL AUTO_INCREMENT,
             `guid`      varchar(64)         NOT NULL DEFAULT '',
@@ -259,6 +266,10 @@ sub create_mysql_databases {
         'CREATE INDEX ixperl ON cpanstats (perl)',
         'CREATE INDEX ixplat ON cpanstats (platform)',
         'CREATE INDEX ixdate ON cpanstats (postdate)',
+
+        'DROP TABLE IF EXISTS ixaddress',
+        'DROP TABLE IF EXISTS tester_address',
+        'DROP TABLE IF EXISTS tester_profile',
 
         q{CREATE TABLE ixaddress (
             id          int(10) unsigned    NOT NULL,
