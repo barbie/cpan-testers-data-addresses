@@ -16,7 +16,7 @@ WriteMakefile(
 
         # runtime prereqs
         'Class::Accessor::Fast'             => 0,
-        'CPAN::Testers::Common::DBUtils'    => 0,
+        'CPAN::Testers::Common::DBUtils'    => '0.08',
         'Config::IniFiles'                  => 0,
         'File::Basename'                    => 0,
         'File::Path'                        => 0,
