@@ -6,7 +6,7 @@ $|=1;
 #----------------------------------------------------------------------------
 # Library Modules
 
-use Test::More tests => 4;
+use Test::More;
 use CPAN::Testers::Common::DBUtils;
 
 use File::Spec;
@@ -67,9 +67,8 @@ my @TESTERS = (
 # Tests
 
 eval "use Test::Database";
-plan skip_all => "Test::Database required for DB testing" if($@);
-
-#plan 'no_plan';
+if($@)  { plan skip_all => "Test::Database required for DB testing"; }
+else    { plan tests => 4; }
 
 my $td;
 if($td = Test::Database->handle( 'mysql' )) {
@@ -79,7 +78,7 @@ if($td = Test::Database->handle( 'mysql' )) {
 }
 
 SKIP: {
-    skip "No supported databases available", 21  unless($td);
+    skip "No supported databases available", 4  unless($td);
 
     my %opts;
     ($opts{dsn}, $opts{dbuser}, $opts{dbpass}) =  $td->connection_info();
