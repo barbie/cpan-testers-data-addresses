@@ -4,10 +4,9 @@ use strict;
 use CPAN::Testers::Data::Addresses;
 use File::Path;
 use Test::More tests => 22;
-use File::Spec;
 
-my $config = File::Spec->catfile('t','_DBDIR','50logging.ini');
-my $logfile = File::Spec->catfile('t','_DBDIR','50logging.log');
+my $config  = 't/_DBDIR/50logging.ini';
+my $logfile = 't/_DBDIR/50logging.log';
 
 SKIP: {
     skip "Unable to locate config file [$config]", 22   unless(-f $config);

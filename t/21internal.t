@@ -1,11 +1,10 @@
 #!/usr/bin/perl -w
 use strict;
 
-use Test::More tests => 52;
 use CPAN::Testers::Data::Addresses;
-use File::Spec;
+use Test::More tests => 52;
 
-my $config = File::Spec->catfile('t','_DBDIR','test-config.ini');
+my $config = 't/_DBDIR/test-config.ini';
 
 
 ### Email Extraction Tests

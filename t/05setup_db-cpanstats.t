@@ -6,12 +6,10 @@ $|=1;
 #----------------------------------------------------------------------------
 # Library Modules
 
-use Test::More;
 use CPAN::Testers::Common::DBUtils;
-
-use File::Spec;
-use File::Path;
 use File::Basename;
+use File::Path;
+use Test::More;
 
 #----------------------------------------------------------------------------
 # Variables
@@ -124,7 +122,7 @@ sub create_config {
     my $options = shift;
 
     # main config
-    my $f = File::Spec->catfile('t','_DBDIR','test-config.ini');
+    my $f = 't/_DBDIR/test-config.ini';
     unlink $f if -f $f;
     mkpath( dirname($f) );
 
@@ -163,7 +161,7 @@ PRINT
     $fh->close;
 
     # logging test config
-    $f = File::Spec->catfile('t','_DBDIR','50logging.ini');
+    $f = 't/_DBDIR/50logging.ini';
     unlink $f if -f $f;
 
     $fh = IO::File->new($f,'w+') or return;

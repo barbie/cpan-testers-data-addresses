@@ -3,12 +3,11 @@ use strict;
 
 use CPAN::Testers::Data::Addresses;
 use Data::Dumper;
-use File::Spec;
 use File::Slurp;
 use Test::More tests => 19;
 
-my $config = File::Spec->catfile('t','_DBDIR','test-config.ini');
-my $output = File::Spec->catfile('t','_DBDIR','output.txt');
+my $config = 't/_DBDIR/test-config.ini';
+my $output = 't/_DBDIR/output.txt';
 
 ## Test Data
 

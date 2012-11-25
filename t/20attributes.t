@@ -2,11 +2,10 @@
 use strict;
 
 use CPAN::Testers::Data::Addresses;
-use File::Spec;
 use Test::More tests => 23;
 
-my $config = File::Spec->catfile('t','20attributes.ini');
-my $lastid = File::Spec->catfile('t','_DBDIR','lastid.txt');
+my $config = 't/20attributes.ini';
+my $lastid = 't/_DBDIR/lastid.txt';
 
 ok( my $obj = CPAN::Testers::Data::Addresses->new(config => $config), "got object" );
 

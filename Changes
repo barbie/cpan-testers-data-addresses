@@ -1,6 +1,9 @@
 Revision history for Perl distribution CPAN-Testers-Data-Addresses
 ==================================================================
 
+0.10    2012-11-25
+        - File::Spec is rarely the right answer. Removed.
+
 0.09    2012-11-18
         - test plan fixes.
 
