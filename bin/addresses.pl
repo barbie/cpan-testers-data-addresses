@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 use strict;
 
-my $VERSION = '0.07';
+my $VERSION = '0.11';
 
 #----------------------------------------------------------------------------
 
@@ -14,7 +14,7 @@ addresses.pl - helper script to map tester addresses to real people.
   perl addresses.pl \
         [--verbose|v] --config|c=<file> \
         ( [--help|h] \
-        | [--update] \
+        | [--update=<file>] \
         | [--reindex] [--lastid=<num>] \
         | [--backup] \
         | [--mailrc|m=<file>] [--month=<string>] [--match] ) \
@@ -78,7 +78,7 @@ F<http://blog.cpantesters.org/>
 
 =head1 COPYRIGHT AND LICENSE
 
-  Copyright (C) 2009-2012 Barbie for Miss Barbell Productions.
+  Copyright (C) 2009-2013 Barbie for Miss Barbell Productions.
 
   This module is free software; you can redistribute it and/or
   modify it under the Artistic License 2.0.

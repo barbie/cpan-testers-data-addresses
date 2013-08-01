@@ -1,5 +1,6 @@
 Changes
 bin/addresses.pl
+examples/addresses-parser.pl
 examples/getmailrc.pl
 examples/create-address.sql
 examples/settings.ini

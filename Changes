@@ -1,6 +1,9 @@
 Revision history for Perl distribution CPAN-Testers-Data-Addresses
 ==================================================================
 
+        - bin/addresses.pl - '--update' option requires a file.
+        - exmples/addresses-parser.pl - added ability to update db.h
+
 0.10    2012-11-25
         - File::Spec is rarely the right answer. Removed.
 
