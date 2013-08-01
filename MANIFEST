@@ -1,9 +1,12 @@
 Changes
 bin/addresses.pl
 examples/addresses-parser.pl
-examples/getmailrc.pl
 examples/create-address.sql
+examples/getmailrc.pl
+examples/reindex.sh
+examples/search.sh
 examples/settings.ini
+examples/update.sh
 lib/CPAN/Testers/Data/Addresses.pm
 LICENSE
 Makefile.PL
