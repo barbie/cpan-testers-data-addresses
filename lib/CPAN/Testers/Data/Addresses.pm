@@ -230,6 +230,7 @@ sub load_addresses {
     
     my $next = $self->dbh->iterator('hash',$phrasebook{'AllAddressesFull'});
     while( my $row = $next->() ) {
+        $self->{named_map}{$row->{name}}     = { name => $row->{name}, pause => $row->{pause}, addressid => $row->{addressid}, testerid => $row->{testerid}, match => '# MAPPED NAME' }  if($row->{name});
         $self->{paused_map}{$row->{pause}}   = { name => $row->{name}, pause => $row->{pause}, addressid => $row->{addressid}, testerid => $row->{testerid}, match => '# MAPPED PAUSE' }  if($row->{pause});
         $self->{parsed_map}{$row->{address}} = { name => $row->{name}, pause => $row->{pause}, addressid => $row->{addressid}, testerid => $row->{testerid}, match => '# MAPPED ADDRESS' };
         next    unless($row->{email});
@@ -237,10 +238,11 @@ sub load_addresses {
 
         my ($local,$domain) = split(/\@/,$row->{email});
         next    unless($domain);
-        $self->{domain_map}{$domain} = { name => $row->{name}, pause => $row->{pause}, addressid => $row->{addressid}, testerid => $row->{testerid}, match => '# MAPPED DOMAIN' };
+        $self->{domain_map}{$domain}         = { name => $row->{name}, pause => $row->{pause}, addressid => $row->{addressid}, testerid => $row->{testerid}, match => '# MAPPED DOMAIN' };
     }
 
     if($self->{options}{verbose}) {
+        $self->_log( "named entries   = " . scalar(keys %{ $self->{named_map}   }) . "\n" );
         $self->_log( "paused entries  = " . scalar(keys %{ $self->{paused_map}  }) . "\n" );
         $self->_log( "parsed entries  = " . scalar(keys %{ $self->{parsed_map}  }) . "\n" );
         $self->_log( "address entries = " . scalar(keys %{ $self->{address_map} }) . "\n" );
@@ -317,6 +319,7 @@ sub match_addresses {
 
 #    if($self->{options}{verbose}) {
 #        use Data::Dumper;
+#        $self->_log( "named_map=".    Dumper($self->{named_map}) );
 #        $self->_log( "unparsed_map=". Dumper($self->{unparsed_map}) );
 #        $self->_log( "parsed_map="  . Dumper($self->{parsed_map}) );
 #        $self->_log( "paused_map="  . Dumper($self->{paused_map}) );
@@ -345,6 +348,8 @@ sub match_addresses {
             last    if($self->map_domain($key,$local,$domain2,$email));
             shift @parts;
         }
+
+        next    if($self->map_name($key));
     }
 }
 
@@ -470,6 +475,19 @@ sub map_domain {
             $self->{unparsed_map}{$key}->{match} .= " - $domain - $map";
             return 1;
         }
+    }
+
+    return 0;
+}
+
+sub map_name {
+    my ($self,$key) = @_;
+    my ($name) = $key =~ /\(+"?([^"\)]+)"?\)+/;
+    return 0 unless($name);
+
+    if($self->{named_map}{$name}) {
+        $self->{unparsed_map}{$key}->{$_} = $self->{named_map}{$name}->{$_}    for(qw(testerid addressid name pause match));
+        return 1;
     }
 
     return 0;
