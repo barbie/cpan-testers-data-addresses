@@ -1,8 +1,12 @@
 Revision history for Perl distribution CPAN-Testers-Data-Addresses
 ==================================================================
 
-        - bin/addresses.pl - '--update' option requires a file.
-        - exmples/addresses-parser.pl - added ability to update db.h
+        - added testerid, guid & fulldate to file format, so we can update the
+          ixaddress entries too.
+
+        - script updates:
+        -- bin/addresses.pl - '--update' option requires a file.
+        -- examples/addresses-parser.pl - added ability to update db.
 
 0.10    2012-11-25
         - File::Spec is rarely the right answer. Removed.

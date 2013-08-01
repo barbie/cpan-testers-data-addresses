@@ -29,7 +29,7 @@ my (%backups);
 my %phrasebook = (
     'AllAddresses'          => q{SELECT * FROM tester_address},
     'AllAddressesFull'      => q{SELECT a.*,p.name,p.pause FROM tester_address AS a INNER JOIN tester_profile AS p ON p.testerid=a.testerid},
-    'UpdateAddressIndex'    => q{REPLACE INTO ixaddress (id,addressid,fulldate) VALUES (?,?,?)},
+    'UpdateAddressIndex'    => q{REPLACE INTO ixaddress (id,guid,addressid,fulldate) VALUES (?,?,?,?)},
 
     'InsertAddress'         => q{INSERT INTO tester_address (testerid,address,email) VALUES (?,?,?)},
     'GetAddressByText'      => q{SELECT addressid FROM tester_address WHERE address = ?},
@@ -39,9 +39,9 @@ my %phrasebook = (
     'GetTesterByName'       => q{SELECT testerid FROM tester_profile WHERE name = ?},
     'InsertTester'          => q{INSERT INTO tester_profile (name,pause) VALUES (?,?)},
 
-    'AllReports'            => q{SELECT id,tester,fulldate FROM cpanstats WHERE type=2 AND id > ? ORDER BY id},
-    'GetTestersByMonth'     => q{SELECT DISTINCT tester FROM cpanstats WHERE postdate >= '%s' AND state IN ('pass','fail','na','unknown')},
-    'GetTesters'            => q{SELECT DISTINCT tester FROM cpanstats WHERE state IN ('pass','fail','na','unknown')},
+    'AllReports'            => q{SELECT id,guid,tester,fulldate FROM cpanstats WHERE type=2 AND id > ? ORDER BY id LIMIT 1000000},
+    'GetTestersByMonth'     => q{SELECT DISTINCT c.id,c.guid,c.tester,c.fulldate FROM cpanstats c LEFT JOIN ixaddress a ON a.id=c.id WHERE (a.addressid IS NULL OR a.addressid=0) AND c.postdate >= '%s' AND c.state IN ('pass','fail','na','unknown')},
+    'GetTesters'            => q{SELECT DISTINCT c.id,c.guid,c.tester,c.fulldate FROM cpanstats c LEFT JOIN ixaddress a ON a.id=c.id WHERE (a.addressid IS NULL OR a.addressid=0) AND c.state IN ('pass','fail','na','unknown')},
 
     # Database backup requests
     'DeleteBackup'  => 'DELETE FROM addresses',
@@ -114,8 +114,8 @@ sub update {
 
     my $fh = IO::File->new($self->{options}{update})    or die "Cannot open mailrc file [$self->{options}{update}]: $!";
     while(<$fh>) {
-        next    unless(/^(\d+),(\d+),([^,]+),([^,]+),([^,]*)/);
-        my ($addressid,$testerid,$address,$name,$pause) = ($1,$2,$3,$4,$5);
+        next    unless(/^(\d+),([^,]*),([^,]*),(\d+),(\d+),([^,]+),([^,]+),([^,]*)/);
+        my ($reportid,$guid,$fulldate,$addressid,$testerid,$address,$name,$pause) = ($1,$2,$3,$4,$5);
         unless($address && $name) {
             $self->_log("... bogus line: $_");
             next;
@@ -148,6 +148,9 @@ sub update {
 
         $self->dbh->do_query($phrasebook{'LinkAddress'},$testerid,$addressid);
         $self->_log("... profile => address: ($testerid,$name,$pause) => ($addressid,$address)");
+
+        next unless($reportid && $guid && $fulldate);
+        $self->dbh->do_query($phrasebook{'UpdateAddressIndex'},$reportid,$guid,$address,$fulldate);
     }
 
     $self->_printout("$all addresses mapped");
@@ -171,16 +174,16 @@ sub reindex {
 
     # search through reports updating the index
     my $lastid = defined $self->{options}{lastid} ? $self->{options}{lastid} : $self->_lastid();
-    $next = $self->dbh->iterator('hash',$phrasebook{'AllReports'},$lastid);
+    $next = $self->dbh->iterator('hash',$phrasebook{'AllReports'},($lastid || 0));
     while( my $row = $next->() ) {
         #print STDERR "row: $row->{id} $row->{tester}\n";
         if($address{$row->{tester}}) {
             $self->_log("FOUND - row: $row->{id} $row->{tester}");
-            $self->dbh->do_query($phrasebook{'UpdateAddressIndex'},$row->{id},$address{$row->{tester}},$row->{fulldate});
+            $self->dbh->do_query($phrasebook{'UpdateAddressIndex'},$row->{id},$row->{guid},$address{$row->{tester}},$row->{fulldate});
         } else {
             $self->_log("NEW   - row: $row->{id} $row->{tester}");
             $address{$row->{tester}} = $self->dbh->id_query($phrasebook{'InsertAddress'},0,$row->{tester},_extract_email($row->{tester}));
-            $self->dbh->do_query($phrasebook{'UpdateAddressIndex'},$row->{id},$address{$row->{tester}},$row->{fulldate});
+            $self->dbh->do_query($phrasebook{'UpdateAddressIndex'},$row->{id},$row->{guid},$address{$row->{tester}},$row->{fulldate});
         }
 
         $lastid = $row->{id};
@@ -274,7 +277,7 @@ sub load_addresses {
     # grab all records for the month
     my $sql = $self->{options}{month}
         ? sprintf $phrasebook{'GetTestersByMonth'}, $self->{options}{month}
-        : $phrasebook{'GetTestersByMonth'};
+        : $phrasebook{'GetTesters'};
     if($self->{options}{verbose}) {
         $self->_log( "sql = $sql\n" );
     }
@@ -282,17 +285,20 @@ sub load_addresses {
     $self->{parsed} = 0;
     while(my $row = $next->()) {
         $self->{parsed}++;
-        my $email = _extract_email($row->[0]);
+        my $email = _extract_email($row->[2]);
 
-        my $testerid  = $self->{parsed_map}{$row->[0]} ? $self->{parsed_map}{$row->[0]}->{testerid}  : 0;
-        my $addressid = $self->{parsed_map}{$row->[0]} ? $self->{parsed_map}{$row->[0]}->{addressid} : 0;
-        $addressid  ||= $self->{stored_map}{$row->[0]} ? $self->{stored_map}{$row->[0]}->{addressid} : 0;
+        my $testerid  = $self->{parsed_map}{$row->[2]} ? $self->{parsed_map}{$row->[2]}->{testerid}  : 0;
+        my $addressid = $self->{parsed_map}{$row->[2]} ? $self->{parsed_map}{$row->[2]}->{addressid} : 0;
+        $addressid  ||= $self->{stored_map}{$row->[2]} ? $self->{stored_map}{$row->[2]}->{addressid} : 0;
         $testerid   ||= $self->{address_map}{$email} ? $self->{address_map}{$email}->{testerid}  : 0;
         $addressid  ||= $self->{address_map}{$email} ? $self->{address_map}{$email}->{addressid} : 0;
 
         next    if($testerid && $addressid);
         
-        $self->{unparsed_map}{$row->[0]} = { 
+        $self->{unparsed_map}{$row->[2]} = { 
+            reportid    => $row->[0], 
+            guid        => $row->[1], 
+            fulldate    => $row->[3], 
             testerid    => $testerid, 
             addressid   => $addressid, 
             'sort'      => '', 
@@ -357,13 +363,17 @@ sub print_addresses {
     for my $key (sort {$self->{unparsed_map}{$a} cmp $self->{unparsed_map}{$b}} keys %{ $self->{unparsed_map} }) {
         if($self->{unparsed_map}{$key}->{match}) {
             $self->_printout(
-                sprintf "%d,%d,%s,%s,%s,%s", 
+                sprintf "%d,%s,%s,%d,%d,%s,%s,%s,%s", 
+                    ($self->{unparsed_map}{$key}->{reportid}  || 0),
+                    ($self->{unparsed_map}{$key}->{guid}      || ''),
+                    ($self->{unparsed_map}{$key}->{fulldate}  || ''),
+
                     ($self->{unparsed_map}{$key}->{addressid} || 0),
                     ($self->{unparsed_map}{$key}->{testerid}  || 0),
                     $key,
-                    ($self->{unparsed_map}{$key}->{name}  || ''),
-                    ($self->{unparsed_map}{$key}->{pause} || ''),
-                    ($self->{unparsed_map}{$key}->{match} || '')
+                    ($self->{unparsed_map}{$key}->{name}      || ''),
+                    ($self->{unparsed_map}{$key}->{pause}     || ''),
+                    ($self->{unparsed_map}{$key}->{match}     || '')
             );
             delete $self->{unparsed_map}{$key};
         } else {
@@ -390,20 +400,23 @@ sub print_addresses {
     for my $key (sort { $self->{unparsed_map}{$a}{'sort'} cmp $self->{unparsed_map}{$b}{'sort'} } keys %{ $self->{unparsed_map} }) {
         next    unless($key);
         $self->_printout( 
-            sprintf "%d,%d,%s,%s,%s,%s", 
+            sprintf "%d,%s,%s,%d,%d,%s,%s,%s,%s", 
+                ($self->{unparsed_map}{$key}->{reportid}  || 0),
+                ($self->{unparsed_map}{$key}->{guid}      || ''),
+                ($self->{unparsed_map}{$key}->{fulldate}  || ''),
+
                 ($self->{unparsed_map}{$key}->{addressid} || 0),
                 ($self->{unparsed_map}{$key}->{testerid}  || 0),
                 $key,
-                ($self->{unparsed_map}{$key}->{name}  || ''),
-                ($self->{unparsed_map}{$key}->{pause} || ''),
-                ($self->{unparsed_map}{$key}->{match} || '') . "\t" . $self->{unparsed_map}{$key}->{'sort'}
+                ($self->{unparsed_map}{$key}->{name}      || ''),
+                ($self->{unparsed_map}{$key}->{pause}     || ''),
+                ($self->{unparsed_map}{$key}->{match}     || '') . "\t" . $self->{unparsed_map}{$key}->{'sort'}
         );
     }
 }
 
 sub map_address {
-    my $self = shift;
-    my ($key,$local,$domain,$email) = @_;
+    my ($self,$key,$local,$domain,$email) = @_;
 
     if($self->{address_map}{$key}) {
         $self->{unparsed_map}{$key}->{$_} = $self->{address_map}{$key}->{$_}    for(qw(testerid addressid name pause match));
@@ -431,8 +444,7 @@ sub map_address {
 }
 
 sub map_domain {
-    my $self = shift;
-    my ($key,$local,$domain,$email) = @_;
+    my ($self,$key,$local,$domain,$email) = @_;
 
     for my $filter (@{$self->{filters}}) {
         return 0    if($domain =~ /^$filter$/);
@@ -443,6 +455,7 @@ sub map_domain {
         $self->{unparsed_map}{$key}->{match} .= " - $domain";
         return 1;
     }
+
     for my $map (keys %{ $self->{domain_map} }) {
         if($map =~ /\b$domain$/) {
             $self->{unparsed_map}{$key}->{$_} = $self->{domain_map}{$map}->{$_}  for(qw(testerid addressid name pause match));
@@ -450,6 +463,7 @@ sub map_domain {
             return 1;
         }
     }
+
     for my $map (keys %{ $self->{domain_map} }) {
         if($domain =~ /\b$map$/) {
             $self->{unparsed_map}{$key}->{$_} = $self->{domain_map}{$map}->{$_}  for(qw(testerid addressid name pause match));
@@ -457,6 +471,7 @@ sub map_domain {
             return 1;
         }
     }
+
     return 0;
 }
 
@@ -515,6 +530,8 @@ sub _init_options {
         # other options
         'output=s',
         'lastfile=s',
+        'logfile=s',
+        'logclean=i',
         'verbose|v',
         'help|h'
     ) or $self->_help();
