@@ -40,8 +40,8 @@ my %phrasebook = (
     'InsertTester'          => q{INSERT INTO tester_profile (name,pause) VALUES (?,?)},
 
     'AllReports'            => q{SELECT id,guid,tester,fulldate FROM cpanstats WHERE type=2 AND id > ? ORDER BY id LIMIT 1000000},
-    'GetTestersByMonth'     => q{SELECT DISTINCT c.id,c.guid,c.tester,c.fulldate FROM cpanstats c LEFT JOIN ixaddress a ON a.id=c.id WHERE (a.addressid IS NULL OR a.addressid=0) AND c.postdate >= '%s' AND c.state IN ('pass','fail','na','unknown')},
-    'GetTesters'            => q{SELECT DISTINCT c.id,c.guid,c.tester,c.fulldate FROM cpanstats c LEFT JOIN ixaddress a ON a.id=c.id WHERE (a.addressid IS NULL OR a.addressid=0) AND c.state IN ('pass','fail','na','unknown')},
+    'GetTestersByMonth'     => q{SELECT DISTINCT c.id,c.guid,c.tester,c.fulldate FROM cpanstats c LEFT JOIN ixaddress x ON x.id=c.id LEFT JOIN tester_address a ON a.addressid=x.addressid WHERE a.address IS NULL AND c.postdate >= '%s' AND c.state IN ('pass','fail','na','unknown')},
+    'GetTesters'            => q{SELECT DISTINCT c.id,c.guid,c.tester,c.fulldate FROM cpanstats c LEFT JOIN ixaddress x ON x.id=c.id LEFT JOIN tester_address a ON a.addressid=x.addressid WHERE a.address IS NULL AND c.state IN ('pass','fail','na','unknown')},
 
     # Database backup requests
     'DeleteBackup'  => 'DELETE FROM addresses',
@@ -109,25 +109,31 @@ sub search {
 
 sub update {
     my $self = shift;
-    my ($new,$all) = (0,0);
+    my ($new,$all,$add,$err) = (0,0,0,0);
     $self->_log("starting update");
 
     my $fh = IO::File->new($self->{options}{update})    or die "Cannot open mailrc file [$self->{options}{update}]: $!";
     while(<$fh>) {
-        next    unless(/^(\d+),([^,]*),([^,]*),(\d+),(\d+),([^,]+),([^,]+),([^,]*)/);
-        my ($reportid,$guid,$fulldate,$addressid,$testerid,$address,$name,$pause) = ($1,$2,$3,$4,$5);
-        unless($address && $name) {
+        s/\s+$//;
+        next unless($_);
+
+        my ($reportid,$guid,$fulldate,$addressid,$testerid,$address,$name,$pause,$display,$match) = split(',');
+        unless($address && ($name || $display)) {
             $self->_log("... bogus line: $_");
+            $err++;
             next;
         }
+
+        $addressid  ||= 0;
+        $testerid   ||= 0;
+        $name       ||= $display;
+        $pause      ||= '';
 
         $all++;
         if($testerid == 0) {
             my @rows;
             @rows = $self->dbh->get_query('hash',$phrasebook{'GetTesterByPause'},$pause)    if($pause);
-            unless(@rows) {
-                @rows = $self->dbh->get_query('hash',$phrasebook{'GetTesterByName'},$name);
-            }
+            @rows = $self->dbh->get_query('hash',$phrasebook{'GetTesterByName'},$name)      unless(@rows);
 
             if(@rows) {
                 $testerid = $rows[0]->{testerid};
@@ -143,6 +149,7 @@ sub update {
                 $addressid = $rows[0]->{addressid};
             } else {
                 $addressid = $self->dbh->id_query($phrasebook{'InsertAddress'},$testerid,$address,_extract_email($address));
+                $add++;
             }
         }
 
@@ -150,11 +157,13 @@ sub update {
         $self->_log("... profile => address: ($testerid,$name,$pause) => ($addressid,$address)");
 
         next unless($reportid && $guid && $fulldate);
-        $self->dbh->do_query($phrasebook{'UpdateAddressIndex'},$reportid,$guid,$address,$fulldate);
+        $self->dbh->do_query($phrasebook{'UpdateAddressIndex'},$reportid,$guid,$addressid,$fulldate);
     }
 
     $self->_printout("$all addresses mapped");
-    $self->_printout("$new new addresses");
+    $self->_printout("$new new testers");
+    $self->_printout("$add addresses added");
+    $self->_printout("$err bogus lines");
 
     $self->_log("$all addresses mapped, $new new addresses");
     $self->_log("stopping update");
@@ -341,14 +350,19 @@ sub match_addresses {
 #print STDERR "email=[$email], local=[$local], domain=[$domain]\n"  if($email =~ /indiana/);
         next    if($self->map_address($key,$local,$domain,$email));
 
+        my $last = 0;
         my @parts = split(/\./,$domain);
         while(@parts > 1) {
             my $domain2 = join(".",@parts);
 #print STDERR "domain2=[$domain2]\n"  if($email =~ /indiana/);
-            last    if($self->map_domain($key,$local,$domain2,$email));
+            if($self->map_domain($key,$local,$domain2,$email)) {
+                $last = 1;
+                last;
+            }
             shift @parts;
         }
 
+        next    if($last);
         next    if($self->map_name($key));
     }
 }
@@ -365,20 +379,23 @@ sub print_addresses {
     }
 
     $self->_printout( "\nMATCH:" );
-    for my $key (sort {$self->{unparsed_map}{$a} cmp $self->{unparsed_map}{$b}} keys %{ $self->{unparsed_map} }) {
-        if($self->{unparsed_map}{$key}->{match}) {
+    for my $key (sort {$self->{unparsed_map}{$a}->{match} cmp $self->{unparsed_map}{$b}->{match}} 
+                    grep {$self->{unparsed_map}{$_}->{match}}
+                        keys %{ $self->{unparsed_map} }) {
+        if($self->{unparsed_map}{$key}->{match} && $self->{unparsed_map}{$key}->{match} !~ /SUGGESTION/) {
             $self->_printout(
-                sprintf "%d,%s,%s,%d,%d,%s,%s,%s,%s", 
-                    ($self->{unparsed_map}{$key}->{reportid}  || 0),
-                    ($self->{unparsed_map}{$key}->{guid}      || ''),
-                    ($self->{unparsed_map}{$key}->{fulldate}  || ''),
+                sprintf "%d,%s,%s,%d,%d,%s,%s,%s,%s,%s", 
+                    ($self->{unparsed_map}{$key}->{reportid}    || 0),
+                    ($self->{unparsed_map}{$key}->{guid}        || ''),
+                    ($self->{unparsed_map}{$key}->{fulldate}    || ''),
 
-                    ($self->{unparsed_map}{$key}->{addressid} || 0),
-                    ($self->{unparsed_map}{$key}->{testerid}  || 0),
+                    ($self->{unparsed_map}{$key}->{addressid}   || 0),
+                    ($self->{unparsed_map}{$key}->{testerid}    || 0),
                     $key,
-                    ($self->{unparsed_map}{$key}->{name}      || ''),
-                    ($self->{unparsed_map}{$key}->{pause}     || ''),
-                    ($self->{unparsed_map}{$key}->{match}     || '')
+                    ($self->{unparsed_map}{$key}->{name}        || ''),
+                    ($self->{unparsed_map}{$key}->{pause}       || ''),
+                    ($self->{unparsed_map}{$key}->{display}     || ''),
+                    ($self->{unparsed_map}{$key}->{match}       || '')
             );
             delete $self->{unparsed_map}{$key};
         } else {
@@ -394,6 +411,27 @@ sub print_addresses {
         }
     }
 
+    $self->_printout( "\nSUGGESTIONS:" );
+    for my $key (sort {$self->{unparsed_map}{$a} cmp $self->{unparsed_map}{$b}} 
+                    grep {$self->{unparsed_map}{$_}->{match} && $self->{unparsed_map}{$_}->{match} =~ /SUGGESTION/} 
+                        keys %{ $self->{unparsed_map} }) {
+        $self->_printout(
+            sprintf "%d,%s,%s,%d,%d,%s,%s,%s,%s,%s", 
+                ($self->{unparsed_map}{$key}->{reportid}    || 0),
+                ($self->{unparsed_map}{$key}->{guid}        || ''),
+                ($self->{unparsed_map}{$key}->{fulldate}    || ''),
+
+                ($self->{unparsed_map}{$key}->{addressid}   || 0),
+                ($self->{unparsed_map}{$key}->{testerid}    || 0),
+                $key,
+                ($self->{unparsed_map}{$key}->{name}        || ''),
+                ($self->{unparsed_map}{$key}->{pause}       || ''),
+                ($self->{unparsed_map}{$key}->{display}     || ''),
+                ($self->{unparsed_map}{$key}->{match}       || '')
+            );
+            delete $self->{unparsed_map}{$key};
+    }
+
     $self->_printout( '' );
     return  if($self->{options}{match});
 
@@ -405,17 +443,19 @@ sub print_addresses {
     for my $key (sort { $self->{unparsed_map}{$a}{'sort'} cmp $self->{unparsed_map}{$b}{'sort'} } keys %{ $self->{unparsed_map} }) {
         next    unless($key);
         $self->_printout( 
-            sprintf "%d,%s,%s,%d,%d,%s,%s,%s,%s", 
-                ($self->{unparsed_map}{$key}->{reportid}  || 0),
-                ($self->{unparsed_map}{$key}->{guid}      || ''),
-                ($self->{unparsed_map}{$key}->{fulldate}  || ''),
+            sprintf "%d,%s,%s,%d,%d,%s,%s,%s,%s,%s,%s", 
+                ($self->{unparsed_map}{$key}->{reportid}    || 0),
+                ($self->{unparsed_map}{$key}->{guid}        || ''),
+                ($self->{unparsed_map}{$key}->{fulldate}    || ''),
 
-                ($self->{unparsed_map}{$key}->{addressid} || 0),
-                ($self->{unparsed_map}{$key}->{testerid}  || 0),
+                ($self->{unparsed_map}{$key}->{addressid}   || 0),
+                ($self->{unparsed_map}{$key}->{testerid}    || 0),
                 $key,
-                ($self->{unparsed_map}{$key}->{name}      || ''),
-                ($self->{unparsed_map}{$key}->{pause}     || ''),
-                ($self->{unparsed_map}{$key}->{match}     || '') . "\t" . $self->{unparsed_map}{$key}->{'sort'}
+                ($self->{unparsed_map}{$key}->{name}        || ''),
+                ($self->{unparsed_map}{$key}->{pause}       || ''),
+                ($self->{unparsed_map}{$key}->{match}       || ''),
+                ($self->{unparsed_map}{$key}->{display}     || ''),
+                ($self->{unparsed_map}{$key}->{'sort'}      || '')
         );
     }
 }
@@ -456,14 +496,14 @@ sub map_domain {
     }
 
     if($self->{domain_map}{$domain}) {
-        $self->{unparsed_map}{$key}->{$_} = $self->{domain_map}{$domain}->{$_}  for(qw(testerid addressid name pause match));
+        $self->{unparsed_map}{$key}->{$_} = $self->{domain_map}{$domain}->{$_}  for(qw(testerid name pause match));
         $self->{unparsed_map}{$key}->{match} .= " - $domain";
         return 1;
     }
 
     for my $map (keys %{ $self->{domain_map} }) {
         if($map =~ /\b$domain$/) {
-            $self->{unparsed_map}{$key}->{$_} = $self->{domain_map}{$map}->{$_}  for(qw(testerid addressid name pause match));
+            $self->{unparsed_map}{$key}->{$_} = $self->{domain_map}{$map}->{$_}  for(qw(testerid name pause match));
             $self->{unparsed_map}{$key}->{match} .= " - $domain - $map";
             return 1;
         }
@@ -471,7 +511,7 @@ sub map_domain {
 
     for my $map (keys %{ $self->{domain_map} }) {
         if($domain =~ /\b$map$/) {
-            $self->{unparsed_map}{$key}->{$_} = $self->{domain_map}{$map}->{$_}  for(qw(testerid addressid name pause match));
+            $self->{unparsed_map}{$key}->{$_} = $self->{domain_map}{$map}->{$_}  for(qw(testerid name pause match));
             $self->{unparsed_map}{$key}->{match} .= " - $domain - $map";
             return 1;
         }
@@ -483,12 +523,21 @@ sub map_domain {
 sub map_name {
     my ($self,$key) = @_;
     my ($name) = $key =~ /\(+"?([^"\)]+)"?\)+/;
+    ($name) = $key =~ /^\s*"?([^"<]+)"?\s+</    unless($name);
     return 0 unless($name);
 
     if($self->{named_map}{$name}) {
-        $self->{unparsed_map}{$key}->{$_} = $self->{named_map}{$name}->{$_}    for(qw(testerid addressid name pause match));
+        $self->{unparsed_map}{$key}->{$_} = $self->{named_map}{$name}->{$_}    for(qw(testerid name pause match));
         return 1;
     }
+
+    if($self->{paused_map}{$name}) {
+        $self->{unparsed_map}{$key}->{$_} = $self->{paused_map}{$name}->{$_}    for(qw(testerid name pause match));
+        return 1;
+    }
+
+    $self->{unparsed_map}{$key}{display} = $name;
+    $self->{unparsed_map}{$key}{match}   = '# SUGGESTION';
 
     return 0;
 }
