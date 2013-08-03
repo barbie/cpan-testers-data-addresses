@@ -697,7 +697,7 @@ sub _help {
         print "\n";
         print "Usage:$0 [--verbose|v] --config|c=<file> \\\n";
         print "         ( [--help|h] \\\n";
-        print "         | [--update] \\\n";
+        print "         | [--update=<file>] \\\n";
         print "         | [--reindex] [--lastid=<num>] \\\n";
         print "         | [--backup] \\\n";
         print "         | [--mailrc|m=<file>] [--month=<string>] [--match] ) \\\n";
@@ -713,7 +713,7 @@ sub _help {
         print "  [--output=<file>]          # path/file to output file (defaults to STDOUT)\n";
 
         print "\nUpdate Options:\n";
-        print "  [--update]                 # run in update mode\n";
+        print "  [--update=<file>]          # run in update mode\n";
 
         print "\nReindex Options:\n";
         print "  [--reindex]                # run in reindex mode\n";
@@ -777,7 +777,7 @@ CPAN::Testers::Data::Addresses - CPAN Testers Addresses Database Manager
   perl addresses.pl \
         [--verbose|v] --config|c=<file> \
         ( [--help|h] \
-        | [--update] \
+        | [--update=<file>] \
         | [--reindex] [--lastid=<num>] \
         | [--backup] \
         | [--mailrc|m=<file>] [--month=<string>] [--match] ) \
