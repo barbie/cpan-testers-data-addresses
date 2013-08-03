@@ -16,6 +16,7 @@ addresses.pl - helper script to map tester addresses to real people.
         ( [--help|h] \
         | [--update=<file>] \
         | [--reindex] [--lastid=<num>] \
+        | [--clean] \
         | [--backup] \
         | [--mailrc|m=<file>] [--month=<string>] [--match] ) \
         [--logfile=<file>] [--logclean=(0|1)]

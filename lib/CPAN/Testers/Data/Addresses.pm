@@ -32,7 +32,7 @@ my %phrasebook = (
     'UpdateAddressIndex'    => q{REPLACE INTO ixaddress (id,guid,addressid,fulldate) VALUES (?,?,?,?)},
 
     'InsertAddress'         => q{INSERT INTO tester_address (testerid,address,email) VALUES (?,?,?)},
-    'GetAddressByText'      => q{SELECT addressid FROM tester_address WHERE address = ?},
+    'GetAddressByText'      => q{SELECT * FROM tester_address WHERE address = ?},
     'LinkAddress'           => q{UPDATE tester_address SET testerid=? WHERE addressid=?},
 
     'GetTesterByPause'      => q{SELECT testerid FROM tester_profile WHERE pause = ?},
@@ -48,6 +48,11 @@ my %phrasebook = (
     'CreateBackup'  => 'CREATE TABLE addresses (testerid int, name text, pause text, PRIMARY KEY (testerid))',
     'SelectBackup'  => 'SELECT * FROM tester_profile',
     'InsertBackup'  => 'INSERT INTO addresses (testerid,name,pause) VALUES (?,?,?)',
+
+    # Consolidations
+    'DuplicateAddresses'    => q{SELECT address,count(*) AS count FROM tester_address GROUP BY address ORDER BY count DESC},
+    'UpdateAddress'         => q{UPDATE ixaddress SET addressid=? WHERE addressid=?},
+    'DeleteAddress'         => q{DELETE FROM tester_address WHERE addressid=?},
 );
 
 my %defaults = (
@@ -90,6 +95,9 @@ sub process {
 
     } elsif($self->{options}{backup}) {
         $self->backup();
+
+    } elsif($self->{options}{clean}) {
+        $self->clean();
 
     } else {
         $self->search();
@@ -199,6 +207,35 @@ sub reindex {
     }
     $self->_lastid($lastid);
     $self->_log("stopping reindex");
+}
+
+sub clean {
+    my $self = shift;
+    $self->_log("starting clean");
+
+    my $next = $self->dbh->iterator('hash',$phrasebook{'DuplicateAddresses'});
+    while( my $row = $next->() ) {
+        $self->_log("count=$row->{count}, address=$row->{address}");
+
+        last    if($row->{count} <= 1);
+
+        my %addr;
+        my @rows = $self->dbh->get_query('hash',$phrasebook{'GetAddressByText'},$row->{address});
+        $self->_log("- count=".scalar(@rows).", address=$row->{address}");
+        for my $addr (@rows) {
+            $self->_log("id=$addr->{addressid}, address=$addr->{address}");
+            if($addr{$addr->{address}}) {
+                $self->_log("replace $addr->{addressid},'$addr->{address}' => $addr{$addr->{address}}->{addressid},'$addr{$addr->{address}}->{address}'");
+                $self->dbh->do_query($phrasebook{'UpdateAddress'},$addr{$addr->{address}}->{addressid},$addr->{addressid});
+                $self->dbh->do_query($phrasebook{'DeleteAddress'},$addr->{addressid});
+
+            } else {
+                $addr{$addr->{address}} = $addr;
+            }
+        }
+    }
+
+    $self->_log("stopping clean");
 }
 
 sub backup {
@@ -464,12 +501,12 @@ sub map_address {
     my ($self,$key,$local,$domain,$email) = @_;
 
     if($self->{address_map}{$key}) {
-        $self->{unparsed_map}{$key}->{$_} = $self->{address_map}{$key}->{$_}    for(qw(testerid addressid name pause match));
+        $self->{unparsed_map}{$key}->{$_} = $self->{address_map}{$key}->{$_}        for(qw(testerid addressid name pause match));
         return 1;
     }
 
     if($self->{address_map}{$email}) {
-        $self->{unparsed_map}{$key}->{$_} = $self->{address_map}{$email}->{$_}    for(qw(testerid addressid name pause match));
+        $self->{unparsed_map}{$key}->{$_} = $self->{address_map}{$email}->{$_}      for(qw(testerid addressid name pause match));
         return 1;
     }
 
@@ -481,7 +518,7 @@ sub map_address {
     }
 
     if($self->{cpan_map}{$email}) {
-        $self->{unparsed_map}{$key}->{$_} = $self->{cpan_map}{$email}->{$_}    for(qw(testerid addressid name pause match));
+        $self->{unparsed_map}{$key}->{$_} = $self->{cpan_map}{$email}->{$_}         for(qw(testerid addressid name pause match));
         return 1;
     }
 
@@ -503,7 +540,7 @@ sub map_domain {
 
     for my $map (keys %{ $self->{domain_map} }) {
         if($map =~ /\b$domain$/) {
-            $self->{unparsed_map}{$key}->{$_} = $self->{domain_map}{$map}->{$_}  for(qw(testerid name pause match));
+            $self->{unparsed_map}{$key}->{$_} = $self->{domain_map}{$map}->{$_} for(qw(testerid name pause match));
             $self->{unparsed_map}{$key}->{match} .= " - $domain - $map";
             return 1;
         }
@@ -511,7 +548,7 @@ sub map_domain {
 
     for my $map (keys %{ $self->{domain_map} }) {
         if($domain =~ /\b$map$/) {
-            $self->{unparsed_map}{$key}->{$_} = $self->{domain_map}{$map}->{$_}  for(qw(testerid name pause match));
+            $self->{unparsed_map}{$key}->{$_} = $self->{domain_map}{$map}->{$_} for(qw(testerid name pause match));
             $self->{unparsed_map}{$key}->{match} .= " - $domain - $map";
             return 1;
         }
@@ -527,7 +564,7 @@ sub map_name {
     return 0 unless($name);
 
     if($self->{named_map}{$name}) {
-        $self->{unparsed_map}{$key}->{$_} = $self->{named_map}{$name}->{$_}    for(qw(testerid name pause match));
+        $self->{unparsed_map}{$key}->{$_} = $self->{named_map}{$name}->{$_}     for(qw(testerid name pause match));
         return 1;
     }
 
@@ -572,7 +609,7 @@ sub _init_options {
     my $self = shift;
     my %hash = @_;
     $self->{options} = {};
-    my @options = qw(mailrc update reindex lastid backup month match verbose lastfile logfile logclean output);
+    my @options = qw(mailrc update clean reindex lastid backup month match verbose lastfile logfile logclean output);
 
     GetOptions( $self->{options},
 
@@ -581,6 +618,9 @@ sub _init_options {
 
         # update mode options
         'update|u=s',
+
+        # clean mode options
+        'clean',
 
         # reindex mode options
         'reindex|r',
@@ -699,6 +739,7 @@ sub _help {
         print "         ( [--help|h] \\\n";
         print "         | [--update=<file>] \\\n";
         print "         | [--reindex] [--lastid=<num>] \\\n";
+        print "         | [--clean] \\\n";
         print "         | [--backup] \\\n";
         print "         | [--mailrc|m=<file>] [--month=<string>] [--match] ) \\\n";
         print "         [--output=<file>] \n\n";
@@ -718,6 +759,9 @@ sub _help {
         print "\nReindex Options:\n";
         print "  [--reindex]                # run in reindex mode\n";
         print "  [--lastid=<num>]           # id to start reindex from\n";
+
+        print "\nClean Options:\n";
+        print "  [--clean]                  # run in clean mode (de-duplication)\n";
 
         print "\nBackup Options:\n";
         print "  [--backup]                 # run in backup mode\n";
@@ -779,6 +823,7 @@ CPAN::Testers::Data::Addresses - CPAN Testers Addresses Database Manager
         ( [--help|h] \
         | [--update=<file>] \
         | [--reindex] [--lastid=<num>] \
+        | [--clean] \
         | [--backup] \
         | [--mailrc|m=<file>] [--month=<string>] [--match] ) \
         [--logfile=<file>] [--logclean=(0|1)]
@@ -852,6 +897,10 @@ reference source text file.
 =item * reindex
 
 Indexes the ixaddress table, updating the tester_address table if appropriate.
+
+=item * clean
+
+De-duplicates addresses.
 
 =item * backup
 
