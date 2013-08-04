@@ -837,27 +837,34 @@ search it, based on a restricted set of criteria.
 
 The schema for the MySQL database is below:
 
-    CREATE TABLE ixaddress (
-        id          int(10) unsigned NOT NULL,
-        addressid   int(10) unsigned NOT NULL,
-        fulldate    varchar(32),
-      PRIMARY KEY  (id)
+    CREATE TABLE `ixaddress` (
+      `id` int(10) unsigned NOT NULL,
+      `guid` varchar(40) NOT NULL DEFAULT '',
+      `addressid` int(10) unsigned NOT NULL,
+      `fulldate` varchar(32) DEFAULT NULL,
+      PRIMARY KEY (`id`,`guid`),
+      KEY `IXGUID` (`guid`),
+      KEY `IXADDR` (`addressid`)
     ) ENGINE=MyISAM;
 
-    CREATE TABLE tester_address (
-        addressid   int(10) unsigned NOT NULL auto_increment,
-        testerid    int(10) unsigned NOT NULL default 0,
-        address     varchar(255) NOT NULL,
-        email       varchar(255) default NULL,
-      PRIMARY KEY  (addressid)
-    ) ENGINE=MyISAM;
+    CREATE TABLE `tester_address` (
+      `addressid` int(10) unsigned NOT NULL AUTO_INCREMENT,
+      `testerid` int(10) unsigned NOT NULL DEFAULT '0',
+      `address` varchar(255) NOT NULL,
+      `email` varchar(255) DEFAULT NULL,
+      PRIMARY KEY (`addressid`),
+      KEY `IXTESTER` (`testerid`),
+      KEY `IXADDRESS` (`address`)
+    ) ENGINE=MyISAM DEFAULT CHARSET UTF8;
 
-    CREATE TABLE tester_profile (
-        testerid    int(10) unsigned NOT NULL auto_increment,
-        name        varchar(255) default NULL,
-        pause       varchar(255) default NULL,
-      PRIMARY KEY  (testerid)
-    ) ENGINE=MyISAM;
+    CREATE TABLE `tester_profile` (
+      `testerid` int(10) unsigned NOT NULL AUTO_INCREMENT,
+      `name` varchar(255) DEFAULT NULL,
+      `pause` varchar(255) DEFAULT NULL,
+      PRIMARY KEY (`testerid`),
+      KEY `IXNAME` (`name`),
+      KEY `IXPAUSE` (`pause`)
+    ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 The address field is the same as the tester field in the cpanstats table, while
 the email field is the extracted email address field only.
