@@ -1,6 +1,6 @@
 {
     "name": "CPAN-Testers-Data-Addresses",
-    "version": "0.10",
+    "version": "0.11",
     "abstract": "CPAN Testers Addresses Data Manager",
     "author": ["Barbie <barbie@cpan.org>"],
 
@@ -52,7 +52,7 @@
     "provides": {
         "CPAN::Testers::Data::Addresses": {
             "file": "lib/CPAN/Testers/Data/Addresses.pm",
-            "version": "0.10"
+            "version": "0.11"
         }
     },
     "no_index": {
@@ -60,7 +60,8 @@
     },
 
     "resources": {
-        "license": "http://dev.perl.org/licenses/",
+        "license": "http://www.perlfoundation.org/artistic_license_2_0",
+        "homepage": "http://stats.cpantesters.org",
         "bugtracker": { "web": "http://rt.cpan.org/Public/Dist/Display.html?Name=CPAN-Testers-Data-Addresses" },
         "repository": {
             "url": "git://github.com/barbie/cpan-testers-data-addresses.git",

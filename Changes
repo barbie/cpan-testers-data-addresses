@@ -1,12 +1,15 @@
 Revision history for Perl distribution CPAN-Testers-Data-Addresses
 ==================================================================
 
+0.11    2013-08-04
         - added testerid, guid & fulldate to file format, so we can update the
           ixaddress entries too.
         - map against tester's display name.
+        - clean functionality added to de-duplicate addresses.
 
         - script updates:
         -- bin/addresses.pl - '--update' option requires a file.
+        -- bin/addresses.pl - added '--clean' option.
         -- examples/addresses-parser.pl - added ability to update db.
         -- added some example command lines via shell scripts.
 
