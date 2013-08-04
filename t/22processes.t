@@ -149,46 +149,67 @@ my %results = (
     },
     unparsed_map => {
         'andreas.koenig.gmwojprw@franz.ak.mind.de' => {
-            'email' => 'andreas.koenig.gmwojprw@franz.ak.mind.de',
-            'testerid' => 0,
-            'sort' => '',
-            'addressid' => 0
+            'email'     => 'andreas.koenig.gmwojprw@franz.ak.mind.de',
+            'testerid'  => 0,
+            'sort'      => '',
+            'addressid' => 0,
+            'reportid'  => '2967432',
+            'fulldate'  => '200901011038',
+            'guid'      => '02967432-b19f-3f77-b713-d32bba55d77f'
         },
         '"Josts Smokehouse" <JOST@cpan.org>' => {
-            'email' => 'JOST@cpan.org',
-            'testerid' => 0,
-            'sort' => '',
-            'addressid' => 0
+            'email'     => 'JOST@cpan.org',
+            'testerid'  => 0,
+            'sort'      => '',
+            'addressid' => 0,
+            'reportid'  => '2603754',
+            'fulldate'  => '200811122105',
+            'guid'      => '02603754-b19f-3f77-b713-d32bba55d77f'
         },
         'imacat@mail.imacat.idv.tw' => {
-            'email' => 'imacat@mail.imacat.idv.tw',
-            'testerid' => 0,
-            'sort' => '',
-            'addressid' => 0
+            'email'     => 'imacat@mail.imacat.idv.tw',
+            'testerid'  => 0,
+            'sort'      => '',
+            'addressid' => 0,
+            'reportid'  => '2967647',
+            'fulldate'  => '200901011830',
+            'guid'      => '02967647-b19f-3f77-b713-d32bba55d77f'
         },
         'stro@cpan.org' => {
-            'email' => 'stro@cpan.org',
-            'testerid' => 0,
-            'sort' => '',
-            'addressid' => 0
+            'email'     => 'stro@cpan.org',
+            'testerid'  => 0,
+            'sort'      => '',
+            'addressid' => 0,
+            'reportid'  => '2725989',
+            'fulldate'  => '200812011303',
+            'guid'      => '02725989-b19f-3f77-b713-d32bba55d77f'
         },
         'CPAN.DCOLLINS@comcast.net' => {
-            'email' => 'CPAN.DCOLLINS@comcast.net',
-            'testerid' => 0,
-            'sort' => '',
-            'addressid' => 0
+            'email'     => 'CPAN.DCOLLINS@comcast.net',
+            'testerid'  => 0,
+            'sort'      => '',
+            'addressid' => 0,
+            'reportid'  => '2970367',
+            'fulldate'  => '200901010041',
+            'guid'      => '02970367-b19f-3f77-b713-d32bba55d77f'
         },
         '"Oliver Paukstadt" <cpan@sourcentral.org>' => {
-            'email' => 'cpan@sourcentral.org',
-            'testerid' => 0,
-            'sort' => '',
-            'addressid' => 0
+            'email'     => 'cpan@sourcentral.org',
+            'testerid'  => 0,
+            'sort'      => '',
+            'addressid' => 0,
+            'reportid'  => '2966567',
+            'fulldate'  => '200901010638',
+            'guid'      => '02966567-b19f-3f77-b713-d32bba55d77f'
         },
         'Ulrich Habel <rhaen@cpan.org>' => {
-            'email' => 'rhaen@cpan.org',
-            'testerid' => 0,
-            'sort' => '',
-            'addressid' => 0
+            'email'     => 'rhaen@cpan.org',
+            'testerid'  => 0,
+            'sort'      => '',
+            'addressid' => 0,
+            'reportid'  => '2975969',
+            'fulldate'  => '200901021220',
+            'guid'      => '02975969-b19f-3f77-b713-d32bba55d77f'
         }
     },
 );
@@ -224,7 +245,7 @@ SKIP: {
 
     # test update process
     my $f = 't/_DBDIR/update.txt';
-    write_file($f,'0,0,barbie@missbarbell.co.uk,Barbie,BARBIE');
+    write_file($f,'2975970,02975970-b19f-3f77-b713-d32bba55d77f,200901021220,0,0,barbie@missbarbell.co.uk,Barbie,BARBIE');
     $obj = CPAN::Testers::Data::Addresses->new(config => $config, update => $f);
 
     my $dbh = $obj->dbh;

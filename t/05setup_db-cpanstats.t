@@ -214,6 +214,7 @@ sub create_sqlite_databases {
 
         'CREATE TABLE ixaddress (
             id          INTEGER NOT NULL,
+            guid        TEXT,
             addressid   INTEGER NOT NULL,
             fulldate    TEXT
         )',
@@ -270,6 +271,7 @@ sub create_mysql_databases {
 
         q{CREATE TABLE ixaddress (
             id          int(10) unsigned    NOT NULL,
+            guid        varchar(40)         NOT NULL DEFAULT '',
             addressid   int(10) unsigned    NOT NULL,
             fulldate    varchar(32)         DEFAULT ''
         )},

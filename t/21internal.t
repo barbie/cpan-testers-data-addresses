@@ -2,7 +2,7 @@
 use strict;
 
 use CPAN::Testers::Data::Addresses;
-use Test::More tests => 52;
+use Test::More tests => 56;
 
 my $config = 't/_DBDIR/test-config.ini';
 
@@ -170,26 +170,30 @@ SKIP: {
     %results = (
         'barbie@missbarbell.co.uk (Barbie)' => {
             'result'    => 1,
+            'name'      => 'Barbie',
             'testerid'  => 6,
-            'addressid' => 6,
+            'addressid' => 0,
             'match'     => '# MAPPED DOMAIN - missbarbell.co.uk'
         },
         'barbie@missbarbell.co.uk' => {
             'result'    => 1,
+            'name'      => 'Barbie',
             'testerid'  => 6,
-            'addressid' => 6,
+            'addressid' => 0,
             'match'     => '# MAPPED DOMAIN - missbarbell.co.uk'
         },
         'barbie@cpan.org' => {
             'result'    => 0,
+            'name'      => undef,
             'testerid'  => 0,
             'addressid' => 0,
             'match'     => undef
         },
         'barbie@barbie.missbarbell.co.uk (Barbie)' => {
             'result'    => 1,
+            'name'      => 'Barbie',
             'testerid'  => 6,
-            'addressid' => 6,
+            'addressid' => 0,
             'match'     => '# MAPPED DOMAIN - barbie.missbarbell.co.uk - missbarbell.co.uk'
         }
     );
@@ -245,7 +249,7 @@ SKIP: {
             $results{$key}{result}, "Domain checks for $key");
 
         is( $obj->{unparsed_map}{$key}{$_}, $results{$key}{$_},
-            ".. checking $_")    for(qw(testerid addressid match));
+            ".. checking $_ for '$key'")    for(qw(testerid addressid name match));
     }
 
 
