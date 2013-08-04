@@ -5,7 +5,7 @@ use strict;
 use warnings;
 
 use vars qw($VERSION);
-$VERSION = '0.10';
+$VERSION = '0.11';
 $|++;
 
 #----------------------------------------------------------------------------
@@ -961,6 +961,10 @@ Authors index.
 
 Attempts to map an address based on its domain.
 
+=item map_name
+
+Attempts to map any name listed in the address to a tester profile.
+
 =back
 
 =cut
@@ -1041,7 +1045,7 @@ F<http://blog.cpantesters.org/>
 
 =head1 COPYRIGHT AND LICENSE
 
-  Copyright (C) 2009-2012 Barbie for Miss Barbell Productions.
+  Copyright (C) 2009-2013 Barbie for Miss Barbell Productions.
 
   This module is free software; you can redistribute it and/or
   modify it under the Artistic License 2.0.
