@@ -23,7 +23,7 @@ for(@addresses) {
 
 
 SKIP: {
-    skip "Unable to locate config file [$config]", 48   unless(-f $config);
+    skip "Unable to locate config file [$config]", 52   unless(-f $config);
 
     ### Prepare object
 

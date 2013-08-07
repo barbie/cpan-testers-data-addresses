@@ -1,6 +1,9 @@
 Revision history for Perl distribution CPAN-Testers-Data-Addresses
 ==================================================================
 
+0.12    2013-08-07
+        - forgot to update the skip value in tests :(
+
 0.11    2013-08-04
         - added testerid, guid & fulldate to file format, so we can update the
           ixaddress entries too.
