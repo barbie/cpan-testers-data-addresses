@@ -3,6 +3,7 @@ Revision history for Perl distribution CPAN-Testers-Data-Addresses
 
         - fixed license fields in META.json to be lists.
         - extended test suite.
+        - added clean tests.
 
 0.12    2013-08-07
         - forgot to update the skip value in tests :(
