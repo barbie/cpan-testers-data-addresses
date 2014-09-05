@@ -144,9 +144,14 @@ $dbcfg
 
 [BACKUPS]
 drivers=<<EOT
+BOGUS
 SQLite
 CSV
 EOT
+
+[BOGUS]
+driver=BOGUS
+database=t/_DBDIR/address.bogus
 
 [SQLite]
 driver=SQLite
