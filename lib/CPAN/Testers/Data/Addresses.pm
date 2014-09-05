@@ -15,6 +15,7 @@ use base qw(Class::Accessor::Fast);
 
 use CPAN::Testers::Common::DBUtils;
 use Config::IniFiles;
+use DBI;
 use File::Basename;
 use File::Path;
 use File::Slurp;
@@ -684,13 +685,30 @@ sub _init_options {
         $self->_help(1,"Given $opt file [$self->{options}{$opt}] not a valid file, see help below.")    unless(-f $self->{options}{$opt});
     }
 
+    # clean up potential rogue characters
+    $self->{options}{lastid} =~ s/\D+//g    if($self->{options}{lastid});
+
+    # prime accessors
+    $self->lastfile($self->{options}{lastfile});
+    $self->logfile($self->{options}{logfile});
+    $self->logclean($self->{options}{logclean});
+
     # configure backup DBs
     if($self->{options}{backup}) {
         $self->help(1,"No configuration for BACKUPS with backup option")    unless($cfg->SectionExists('BACKUPS'));
 
+        # available DBI drivers
+        my %DRIVERS_DBI = map { $_ => 1 } DBI->available_drivers();
+
         my @drivers = $cfg->val('BACKUPS','drivers');
         for my $driver (@drivers) {
             $self->help(1,"No configuration for backup option '$driver'")   unless($cfg->SectionExists($driver));
+
+            # ignore drivers that are unavailable
+            unless($DRIVERS_DBI{$driver}) {
+                $self->_log("Backup DBD driver '$driver' is not available");
+                next;
+            }
 
             %opts = ();
             $opts{$_} = $cfg->val($driver,$_)   for(qw(driver database dbfile dbhost dbport dbuser dbpass));
@@ -708,14 +726,6 @@ sub _init_options {
             $self->help(1,"Cannot configure BACKUPS database for '$driver'")   unless($self->{backups}{$driver}{db});
         }
     }
-
-    # clean up potential rogue characters
-    $self->{options}{lastid} =~ s/\D+//g    if($self->{options}{lastid});
-
-    # prime accessors
-    $self->lastfile($self->{options}{lastfile});
-    $self->logfile($self->{options}{logfile});
-    $self->logclean($self->{options}{logclean});
 
     # set output 
     if($self->{options}{output}) {
