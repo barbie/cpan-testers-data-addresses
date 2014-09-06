@@ -3,8 +3,7 @@ Revision history for Perl distribution CPAN-Testers-Data-Addresses
 
         - fixed license fields in META.json to be lists.
         - extended test suite.
-        - added clean tests.
-        - added backup tests.
+        - added more process tests.
         - rearranged configuration, to optimise logging.
         - now checks and stores available drivers to ensure we have the 
           required backup drivers installed.
