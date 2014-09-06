@@ -23,6 +23,7 @@ t/22processes.t
 t/23clean.t
 t/24backups.t
 t/25updates.t
+t/26search.t
 t/50logging.t
 t/59cleanup.t
 t/90podtest.t
