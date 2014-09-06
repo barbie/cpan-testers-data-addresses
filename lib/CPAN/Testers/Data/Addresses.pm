@@ -611,8 +611,9 @@ sub _init_options {
     my %hash = @_;
     $self->{options} = {};
     my @options = qw(mailrc update clean reindex lastid backup month match verbose lastfile logfile logclean output);
+    my %options;
 
-    GetOptions( $self->{options},
+    GetOptions( \%options,
 
         # mandatory options
         'config|c=s',
@@ -644,7 +645,10 @@ sub _init_options {
         'help|h'
     ) or $self->_help();
 
-    $self->{options}{$_} ||= $hash{$_}  for(qw(config help),@options);
+    for my $opt (qw(config help),@options) {
+        $self->{options}{$opt} ||= $hash{$opt}      if($hash{$opt});
+        $self->{options}{$opt} ||= $options{$opt}   if($options{$opt});
+    }
 
     $self->_help(1) if($self->{options}{help});
     $self->_help(0) if($self->{options}{version});

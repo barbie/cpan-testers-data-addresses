@@ -7,6 +7,7 @@ Revision history for Perl distribution CPAN-Testers-Data-Addresses
         - rearranged configuration, to optimise logging.
         - now checks and stores available drivers to ensure we have the 
           required backup drivers installed.
+        - reordered option loading.
 
 0.12    2013-08-07
         - forgot to update the skip value in tests :(
