@@ -1,6 +1,8 @@
 Revision history for CPAN-Testers-Data-Addresses
 ================================================
 
+        - fixed skip numbers.
+
 0.13    2014-09-10
         - fixed license fields in META.json to be lists.
         - extended test suite.

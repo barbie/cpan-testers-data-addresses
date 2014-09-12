@@ -22,7 +22,7 @@ my @data = (
 
 
 SKIP: {
-    skip "Unable to locate config file [$config]", 7    unless(-f $config);
+    skip "Unable to locate config file [$config]", 3    unless(-f $config);
 
     ### Prepare object
     my $obj;

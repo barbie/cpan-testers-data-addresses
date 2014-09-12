@@ -349,7 +349,7 @@ my @data = (
 );
 
 SKIP: {
-    skip "Unable to locate config file [$config]", 11   unless(-f $config);
+    skip "Unable to locate config file [$config]", 12   unless(-f $config);
 
     ### Prepare object
     my $obj;
