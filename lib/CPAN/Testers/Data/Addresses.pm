@@ -642,10 +642,11 @@ sub _init_options {
         'logfile=s',
         'logclean=i',
         'verbose|v',
+        'version',
         'help|h'
     ) or $self->_help();
 
-    for my $opt (qw(config help),@options) {
+    for my $opt (qw(config help version),@options) {
         $self->{options}{$opt} ||= $hash{$opt}      if($hash{$opt});
         $self->{options}{$opt} ||= $options{$opt}   if($options{$opt});
     }
@@ -749,15 +750,15 @@ sub _help {
 
     if($full) {
         print "\n";
-        print "Usage:$0 [--verbose|v] --config|c=<file> \\\n";
-        print "         ( [--help|h] \\\n";
-        print "         | [--update=<file>] \\\n";
-        print "         | [--reindex] [--lastid=<num>] \\\n";
-        print "         | [--clean] \\\n";
-        print "         | [--backup] \\\n";
-        print "         | [--mailrc|m=<file>] [--month=<string>] [--match] ) \\\n";
-        print "         [--output=<file>] \n\n";
-        print "         [--logfile=<file>] [--logclean=(0|1)] \n\n";
+        print "Usage:$0 ( [--help|h] | --version | --config|c=<file> \\\n";
+        print "           ( [--update=<file>] \\\n";
+        print "           | [--reindex] [--lastid=<num>] \\\n";
+        print "           | [--clean] \\\n";
+        print "           | [--backup] \\\n";
+        print "           | [--mailrc|m=<file>] [--month=<string>] [--match] ) \\\n";
+        print "           [--output=<file>] \\\n";
+        print "           [--logfile=<file>] [--logclean=(0|1)] \\\n";
+        print "           [--verbose|v] ) \n\n";
 
 #              12345678901234567890123456789012345678901234567890123456789012345678901234567890
         print "This program manages the cpan-tester addresses.\n";
@@ -786,6 +787,7 @@ sub _help {
 
         print "\nOther Options:\n";
         print "  [--verbose]                # turn on verbose messages\n";
+        print "  [--version]                # display current version\n";
         print "  [--help]                   # this screen\n";
 
         print "\nFor further information type 'perldoc $0'\n";
