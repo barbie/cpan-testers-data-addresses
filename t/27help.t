@@ -7,7 +7,7 @@ use Test::Trap;
 {
     use CPAN::Testers::Data::Addresses;
 
-    my $VERSION = '0.14';
+    my $VERSION = '0.15';
 
     my $obj;
     my $stdout;
