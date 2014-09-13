@@ -361,7 +361,7 @@ SKIP: {
     my $dbh = $obj->dbh;
     for my $data (@data) {
         my @items = split(',',$data);
-        $dbh->do_query('insert into cpanstats set id=?,guid=?,fulldate=?,postdate=?,state=?,type=2,tester=?',@items);
+        $dbh->do_query('insert into cpanstats (id,guid,fulldate,postdate,state,type,tester) VALUES (?,?,?,?,?,2,?)',@items);
     }
 
     ### Test Underlying Process Methods

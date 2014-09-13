@@ -1,6 +1,8 @@
 Revision history for CPAN-Testers-Data-Addresses
 ================================================
 
+        - fixed search testing with SQLIte.
+
 0.14    2014-09-13
         - fixed skip numbers.
         - added version option.
