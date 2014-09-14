@@ -1,10 +1,31 @@
 #!/usr/bin/perl -w
 use strict;
 
-use Test::More tests => 10;
-use Test::Trap;
+#----------------------------------------------------------------------------#
+# SKIP OPTIONAL TEST
 
-{
+# Code below shamelessly stolen from XIONG/Error-Base-v1.0.2 :)
+
+my $module_loaded;
+
+# Load non-core modules conditionally
+BEGIN{
+    eval{
+        require Test::Trap;                     # Block eval on steroids
+        Test::Trap->import (qw/ :default /);
+    };
+    $module_loaded    = !$@;                    # loaded if no error
+                                                # must be package variable
+                                                # to escape BEGIN block
+}; ## BEGIN
+
+#----------------------------------------------------------------------------#
+
+use Test::More  tests => 10;
+
+SKIP: {
+    skip 'Test::Trap required for testing help features; skipping.', 10 unless($module_loaded);
+    
     use CPAN::Testers::Data::Addresses;
 
     my $VERSION = '0.15';

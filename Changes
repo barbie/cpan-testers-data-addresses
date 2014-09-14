@@ -2,6 +2,7 @@ Revision history for CPAN-Testers-Data-Addresses
 ================================================
 
         - added Test::Trap to recommended test requisites.
+        - made Test::Trap optional (thanks to XIONG's inspiration).
 
 0.15    2014-09-13
         - fixed search testing with SQLIte.
