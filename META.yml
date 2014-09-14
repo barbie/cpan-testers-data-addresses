@@ -28,6 +28,7 @@ recommends:
   Test::Database:                   0
   Test::Pod:                        1.00
   Test::Pod::Coverage:              0.08
+  Test::Trap:                       0
 build_requires:
   Test::More:                       0.70
 
