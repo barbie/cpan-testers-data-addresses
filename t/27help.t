@@ -1,6 +1,8 @@
 #!/usr/bin/perl -w
 use strict;
 
+use Test::More;
+
 #----------------------------------------------------------------------------#
 # SKIP OPTIONAL TEST
 
@@ -10,6 +12,7 @@ my $module_loaded;
 
 # Load non-core modules conditionally
 BEGIN{
+    my $diag   = 'load-test-trap';
     eval{
         require Test::Trap;                     # Block eval on steroids
         Test::Trap->import (qw/ :default /);
@@ -17,11 +20,19 @@ BEGIN{
     $module_loaded    = !$@;                    # loaded if no error
                                                 # must be package variable
                                                 # to escape BEGIN block
+    if ( $module_loaded ) {
+        note($diag);
+    } else {
+        diag('Test::Trap required to execute this test script; skipping.');
+        pass();
+        done_testing(1);
+        exit 0;
+    };
 }; ## BEGIN
 
 #----------------------------------------------------------------------------#
 
-use Test::More  tests => 10;
+plan tests => 10;
 
 SKIP: {
     skip 'Test::Trap required for testing help features; skipping.', 10 unless($module_loaded);

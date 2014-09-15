@@ -1,6 +1,8 @@
 Revision history for CPAN-Testers-Data-Addresses
 ================================================
 
+        - further test fixes for Test::Trap.
+
 0.16    2014-09-14
         - added Test::Trap to recommended test requisites.
         - made Test::Trap optional (thanks to XIONG's inspiration).
