@@ -39,7 +39,7 @@ SKIP: {
     
     use CPAN::Testers::Data::Addresses;
 
-    my $VERSION = '0.16';
+    my $VERSION = '0.17';
 
     my $obj;
     my $stdout;

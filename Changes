@@ -1,6 +1,7 @@
 Revision history for CPAN-Testers-Data-Addresses
 ================================================
 
+0.17    2014-09-15
         - further test fixes for Test::Trap.
 
 0.16    2014-09-14
